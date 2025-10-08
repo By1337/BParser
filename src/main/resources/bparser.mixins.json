@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "package": "org.by1337.bparser.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+    "GameMessageS2CPacketMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "client": [
+    "ClientPlayNetworkHandlerMixin",
+    "PlayerListHudAccessor"
+  ]
+}

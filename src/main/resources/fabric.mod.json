@@ -1,26 +1,26 @@
 {
 	"schemaVersion": 1,
-	"id": "bmenuparser",
+	"id": "bparser",
 	"version": "${version}",
-	"name": "BMenuParser",
-	"description": "Mod for copying menus from servers",
+	"name": "BParser",
+	"description": "Mod for copying anything from servers",
 	"authors": [
 		"By1337"
 	],
 	"contact": {
 		"homepage": "https://discord.gg/bdev",
-		"sources": "https://github.com/By1337/BMenuParser"
+		"sources": "https://github.com/By1337/BParser"
 	},
 	"license": "MIT",
-	"icon": "assets/bmenuparser/icon.png",
+	"icon": "assets/bparser/icon.png",
 	"environment": "client",
 	"entrypoints": {
 		"client": [
-			"org.by1337.bmenuparser.BMenuParser"
+          "org.by1337.bparser.BParser"
 		]
 	},
 	"mixins": [
-		"bmenuparser.mixins.json"
+		"bparser.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.15.6",
