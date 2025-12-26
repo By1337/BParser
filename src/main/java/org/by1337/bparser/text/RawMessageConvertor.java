@@ -17,8 +17,7 @@ public class RawMessageConvertor {
 
     public static String convert(String rawMessage, boolean noColors) {
         if (!rawMessage.startsWith("{")) return "";
-        JsonParser parser = new JsonParser();
-        JsonObject tag = parser.parse(rawMessage).getAsJsonObject();
+        JsonObject tag = JsonParser.parseString(rawMessage).getAsJsonObject();
         return toLegacy(tag, new StringBuilder(), noColors).toString();
     }
 

@@ -1,15 +1,25 @@
 {
   "required": true,
   "package": "org.by1337.bparser.mixin",
-  "compatibilityLevel": "JAVA_8",
+  "compatibilityLevel": "JAVA_17",
   "mixins": [
-    "GameMessageS2CPacketMixin"
+    "AbstractFurnaceScreenHandlerAccessor",
+    "BeaconScreenHandlerAccessor",
+    "BrewingStandScreenHandlerAccessor",
+    "CraftingScreenHandlerAccessor",
+    "NetworkState$PacketHandlerMixin",
+    "EnchantmentScreenHandlerAccessor",
+    "GameMessageS2CPacketMixin",
+    "Generic3x3ContainerScreenHandlerAccessor",
+    "HopperScreenHandlerAccessor",
+    "LecternScreenHandlerAccessor",
+    "MerchantScreenHandlerAccessor",
+    "ShulkerBoxScreenHandlerAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
   },
   "client": [
-    "ClientPlayNetworkHandlerMixin",
     "PlayerListHudAccessor"
   ]
 }

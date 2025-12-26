@@ -17,8 +17,7 @@ public class RawToMM {
     public static String toMM(String raw) {
         StringBuilder out = new StringBuilder();
         if (!raw.startsWith("{")) return "";
-        JsonParser parser = new JsonParser();
-        JsonObject tag = parser.parse(raw).getAsJsonObject();
+        JsonObject tag = JsonParser.parseString(raw).getAsJsonObject();
         toMM(tag, out, new TextDecorator(out));
         return out.toString();
     }
@@ -95,78 +94,46 @@ public class RawToMM {
     }
 
     private static String colorNameToHex(String name) {
-        switch (name) {
-            case "black":
-                return "#000000";
-            case "dark_blue":
-                return "#0000AA";
-            case "dark_green":
-                return "#00AA00";
-            case "dark_aqua":
-                return "#00AAAA";
-            case "dark_red":
-                return "#AA0000";
-            case "dark_purple":
-                return "#AA00AA";
-            case "gold":
-                return "#FFAA00";
-            case "gray":
-                return "#AAAAAA";
-            case "dark_gray":
-                return "#555555";
-            case "blue":
-                return "#5555FF";
-            case "green":
-                return "#55FF55";
-            case "aqua":
-                return "#55FFFF";
-            case "red":
-                return "#FF5555";
-            case "light_purple":
-                return "#FF55FF";
-            case "yellow":
-                return "#FFFF55";
-            case "white":
-                return "#FFFFFF";
-        }
-        return name;
+        return switch (name) {
+            case "black" -> "#000000";
+            case "dark_blue" -> "#0000AA";
+            case "dark_green" -> "#00AA00";
+            case "dark_aqua" -> "#00AAAA";
+            case "dark_red" -> "#AA0000";
+            case "dark_purple" -> "#AA00AA";
+            case "gold" -> "#FFAA00";
+            case "gray" -> "#AAAAAA";
+            case "dark_gray" -> "#555555";
+            case "blue" -> "#5555FF";
+            case "green" -> "#55FF55";
+            case "aqua" -> "#55FFFF";
+            case "red" -> "#FF5555";
+            case "light_purple" -> "#FF55FF";
+            case "yellow" -> "#FFFF55";
+            case "white" -> "#FFFFFF";
+            default -> name;
+        };
     }
     private static String colorHexToName(String name) {
-        switch (name) {
-            case "#000000":
-                return "black";
-            case "#0000AA":
-                return "dark_blue";
-            case "#00AA00":
-                return "dark_green";
-            case "#00AAAA":
-                return "dark_aqua";
-            case "#AA0000":
-                return "dark_red";
-            case "#AA00AA":
-                return "dark_purple";
-            case "#FFAA00":
-                return "gold";
-            case "#AAAAAA":
-                return "gray";
-            case "#555555":
-                return "dark_gray";
-            case "#5555FF":
-                return "blue";
-            case "#55FF55":
-                return "green";
-            case "#55FFFF":
-                return "aqua";
-            case "#FF5555":
-                return "red";
-            case "#FF55FF":
-                return "light_purple";
-            case "#FFFF55":
-                return "yellow";
-            case "#FFFFFF":
-                return "white";
-        }
-        return name;
+        return switch (name) {
+            case "#000000" -> "black";
+            case "#0000AA" -> "dark_blue";
+            case "#00AA00" -> "dark_green";
+            case "#00AAAA" -> "dark_aqua";
+            case "#AA0000" -> "dark_red";
+            case "#AA00AA" -> "dark_purple";
+            case "#FFAA00" -> "gold";
+            case "#AAAAAA" -> "gray";
+            case "#555555" -> "dark_gray";
+            case "#5555FF" -> "blue";
+            case "#55FF55" -> "green";
+            case "#55FFFF" -> "aqua";
+            case "#FF5555" -> "red";
+            case "#FF55FF" -> "light_purple";
+            case "#FFFF55" -> "yellow";
+            case "#FFFFFF" -> "white";
+            default -> name;
+        };
     }
 
 
@@ -368,7 +335,7 @@ public class RawToMM {
         List<JsonObject> flush = new ArrayList<>();
         JsonObject lastData = null;
         for (JsonObject component : components) {
-            JsonObject property = deepCopy(component);
+            JsonObject property = component.deepCopy();
             property.remove("color");
             property.remove("text");
             if (lastData == null) {
@@ -423,7 +390,7 @@ public class RawToMM {
         private final List<ChatColor> colors = new ArrayList<>();
         private ChatColor lastColor = null;
         private int lastDistance = -1;
-        private StringBuilder buffer = new StringBuilder();
+        private final StringBuilder buffer = new StringBuilder();
 
         public boolean tryAdd(JsonObject component) {
             if (!component.has("color")) return false;
@@ -467,31 +434,11 @@ public class RawToMM {
             if (valid.size() <= 2) return null;
             String data = GradientCompressor.toMiniMessage(colors);
             if (data == null) return null;
-            JsonObject base = deepCopy(valid.get(0));
+            JsonObject base = valid.get(0).deepCopy();
             base.addProperty("text", buffer.toString());
             base.addProperty("color", data);
             return base;
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T extends JsonElement> T deepCopy(T val) {
-        if (val instanceof JsonObject) {
-            JsonObject obj = (JsonObject) val;
-            JsonObject copy = new JsonObject();
-            for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
-                copy.add(entry.getKey(), deepCopy(entry.getValue()));
-            }
-            return (T) copy;
-        } else if (val instanceof JsonArray) {
-            JsonArray arr = (JsonArray) val;
-            JsonArray copy = new JsonArray();
-            for (JsonElement element : arr) {
-                copy.add(deepCopy(element));
-            }
-            return (T) copy;
-        }
-        return val;
     }
 
     public static class GradientCompressor {

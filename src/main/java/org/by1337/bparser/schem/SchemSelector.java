@@ -1,29 +1,24 @@
 package org.by1337.bparser.schem;
 
-import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import net.fabricmc.fabric.api.client.command.v1.ClientCommandManager;
-import net.fabricmc.fabric.api.client.command.v1.FabricClientCommandSource;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormats;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.text.LiteralText;
-import net.minecraft.text.TranslatableText;
+import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import org.by1337.bparser.render.RenderUtil;
-import org.lwjgl.opengl.GL11;
 
 public class SchemSelector {
     private static final int MAX_SIZE = 16 * 40;
@@ -32,10 +27,27 @@ public class SchemSelector {
     private BlockPos pos1;
     private BlockPos pos2;
 
-    public void register() {
-        ClientCommandManager.DISPATCHER.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("//schem")
+    public SchemSelector() {
+        AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
+            if (!enabled) return ActionResult.PASS;
+            pos1 = pos;
+            if (pos2 == null) pos2 = pos;
+            return ActionResult.PASS;
+        });
+        UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
+            if (!enabled) return ActionResult.PASS;
+            BlockPos pos = hitResult.getBlockPos();
+            pos2 = pos;
+            if (pos1 == null) pos1 = pos;
+            return ActionResult.PASS;
+        });
+        WorldRenderEvents.LAST.register(this::onRenderWorld);
+    }
+
+    public void register(CommandDispatcher<FabricClientCommandSource> dispatcher) {
+        dispatcher.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("//schem")
                 .executes(ctx -> {
-                            ctx.getSource().sendFeedback(new TranslatableText("lang.bparser.select.usage"));
+                            ctx.getSource().sendFeedback(Text.translatable("lang.bparser.select.usage"));
                             return 1;
                         }
                 )
@@ -43,11 +55,11 @@ public class SchemSelector {
                         .executes(ctx -> {
                             enabled = !enabled;
                             if (enabled) {
-                                ctx.getSource().sendFeedback(new TranslatableText("lang.bparser.select.on"));
+                                ctx.getSource().sendFeedback(Text.translatable("lang.bparser.select.on"));
                             } else {
                                 pos1 = null;
                                 pos2 = null;
-                                ctx.getSource().sendFeedback(new TranslatableText("lang.bparser.select.off"));
+                                ctx.getSource().sendFeedback(Text.translatable("lang.bparser.select.off"));
                             }
                             return 1;
                         })
@@ -80,12 +92,12 @@ public class SchemSelector {
                                             new SchemSaver(new Region(pos1, pos2)).save(name + ".schem");
                                         } catch (Throwable t) {
                                             t.printStackTrace();
-                                            ctx.getSource().sendFeedback(new TranslatableText("lang.bparser.save.failed.error", t.getMessage()));
+                                            ctx.getSource().sendFeedback(Text.translatable("lang.bparser.save.failed.error", t.getMessage()));
                                             return 1;
                                         }
-                                        ctx.getSource().sendFeedback(new TranslatableText("lang.bparser.save.successfully"));
+                                        ctx.getSource().sendFeedback(Text.translatable("lang.bparser.save.successfully"));
                                     } else {
-                                        ctx.getSource().sendFeedback(new TranslatableText("lang.bparser.save.failed.norg"));
+                                        ctx.getSource().sendFeedback(Text.translatable("lang.bparser.save.failed.norg"));
                                     }
                                     return 1;
                                 })
@@ -100,17 +112,17 @@ public class SchemSelector {
                                         if (blocks > 0) {
                                             region.maxY += blocks;
                                             region.resize();
-                                            ctx.getSource().sendFeedback(new TranslatableText("lang.bparser.expand.up", blocks));
+                                            ctx.getSource().sendFeedback(Text.translatable("lang.bparser.expand.up", blocks));
                                         } else {
                                             region.minY -= blocks;
                                             region.resize();
-                                            ctx.getSource().sendFeedback(new TranslatableText("lang.bparser.expand.down", blocks));
+                                            ctx.getSource().sendFeedback(Text.translatable("lang.bparser.expand.down", blocks));
                                         }
                                         pos1 = new BlockPos(region.minX, region.minY, region.minZ);
                                         pos2 = new BlockPos(region.maxX, region.maxY, region.maxZ);
                                         fixSize();
                                     } else {
-                                        ctx.getSource().sendFeedback(new TranslatableText("lang.bparser.save.failed.norg"));
+                                        ctx.getSource().sendFeedback(Text.translatable("lang.bparser.save.failed.norg"));
                                     }
                                     return 1;
                                 })
@@ -144,35 +156,20 @@ public class SchemSelector {
                                                     region.minZ -= blocks;
                                                 }
                                             }
-                                            ctx.getSource().sendFeedback(new TranslatableText("lang.bparser.expand.forward", blocks));
+                                            ctx.getSource().sendFeedback(Text.translatable("lang.bparser.expand.forward", blocks));
                                             region.resize();
                                             pos1 = new BlockPos(region.minX, region.minY, region.minZ);
                                             pos2 = new BlockPos(region.maxX, region.maxY, region.maxZ);
                                             fixSize();
                                         }
                                     } else {
-                                        ctx.getSource().sendFeedback(new TranslatableText("lang.bparser.save.failed.norg"));
+                                        ctx.getSource().sendFeedback(Text.translatable("lang.bparser.save.failed.norg"));
                                     }
                                     return 1;
                                 })
                         )
                 )
         );
-
-        AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
-            if (!enabled) return ActionResult.PASS;
-            pos1 = pos;
-            if (pos2 == null) pos2 = pos;
-            return ActionResult.PASS;
-        });
-        UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
-            if (!enabled) return ActionResult.PASS;
-            BlockPos pos = hitResult.getBlockPos();
-            pos2 = pos;
-            if (pos1 == null) pos1 = pos;
-            return ActionResult.PASS;
-        });
-        WorldRenderEvents.LAST.register(this::onRenderWorld);
     }
 
     private void onRenderWorld(WorldRenderContext context) {
@@ -188,23 +185,22 @@ public class SchemSelector {
             double maxY = region.maxY + 1;
             double maxZ = region.maxZ + 1;
 
+
             {
                 Box box = new Box(minX, minY, minZ, maxX, maxY, maxZ);
                 Box shiftedBox = box.offset(-cameraPos.x, -cameraPos.y, -cameraPos.z);
-                renderRegion(shiftedBox);
-                RenderUtil.drawBox(shiftedBox, 1f, 0, 0, 1, 3.f);
+                RenderUtil.drawBox(context, shiftedBox, 1f, 0, 0, 1, 3.f);
             }
             {
                 Box box = new Box(pos1.getX() + 0.3, pos1.getY() + 0.3, pos1.getZ() + 0.3, pos1.getX() + 0.7, pos1.getY() + 0.7, pos1.getZ() + 0.7);
                 Box shiftedBox = box.offset(-cameraPos.x, -cameraPos.y, -cameraPos.z);
-                RenderUtil.drawBox(shiftedBox, 0f, 1, 0, 1);
+                RenderUtil.drawBox(context, shiftedBox, 0f, 1, 0, 1);
             }
             {
                 Box box = new Box(pos2.getX() + 0.3, pos2.getY() + 0.3, pos2.getZ() + 0.3, pos2.getX() + 0.7, pos2.getY() + 0.7, pos2.getZ() + 0.7);
                 Box shiftedBox = box.offset(-cameraPos.x, -cameraPos.y, -cameraPos.z);
-                RenderUtil.drawBox(shiftedBox, 0f, 1, 0, 1);
+                RenderUtil.drawBox(context, shiftedBox, 0f, 1, 0, 1);
             }
-
         }
     }
 
@@ -236,89 +232,6 @@ public class SchemSelector {
         return o != null ? o : o1;
     }
 
-    private void renderRegion(Box box) {
-
-        Tessellator tessellator = Tessellator.getInstance();
-        BufferBuilder bufferBuilder = tessellator.getBuffer();
-
-        GL11.glEnable(GL11.GL_LINE_SMOOTH);
-        GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
-        GL11.glLineWidth(2.0f);
-
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-
-        RenderSystem.disableDepthTest();
-
-        RenderSystem.disableTexture();
-
-        RenderSystem.color4f(0.6f, 04f, 0.7f, 0.3f);
-
-        bufferBuilder.begin(GL11.GL_LINES, VertexFormats.POSITION);
-
-        drawBoxWithGrid(bufferBuilder, box, 1);
-
-        tessellator.draw();
-
-        RenderSystem.enableTexture();
-        RenderSystem.enableDepthTest();
-        RenderSystem.disableBlend();
-        GL11.glDisable(GL11.GL_LINE_SMOOTH);
-    }
-
-    public static void drawBoxWithGrid(BufferBuilder bufferBuilder, Box box, double step) {
-        double minX = box.minX;
-        double minY = box.minY;
-        double minZ = box.minZ;
-        double maxX = box.maxX;
-        double maxY = box.maxY;
-        double maxZ = box.maxZ;
-
-        for (double z = minZ; z <= maxZ; z += step) {
-            bufferBuilder.vertex(minX, minY, z).next();
-            bufferBuilder.vertex(maxX, minY, z).next();
-
-            bufferBuilder.vertex(minX, maxY, z).next();
-            bufferBuilder.vertex(maxX, maxY, z).next();
-
-            if (z != minZ && z != maxZ) {
-                bufferBuilder.vertex(minX, maxY, z).next();
-                bufferBuilder.vertex(minX, minY, z).next();
-
-                bufferBuilder.vertex(maxX, maxY, z).next();
-                bufferBuilder.vertex(maxX, minY, z).next();
-            }
-        }
-
-        for (double x = minX; x <= maxX; x += step) {
-
-            bufferBuilder.vertex(x, minY, minZ).next();
-            bufferBuilder.vertex(x, minY, maxZ).next();
-
-            bufferBuilder.vertex(x, maxY, minZ).next();
-            bufferBuilder.vertex(x, maxY, maxZ).next();
-
-            bufferBuilder.vertex(x, maxY, maxZ).next();
-            bufferBuilder.vertex(x, minY, maxZ).next();
-
-            bufferBuilder.vertex(x, maxY, minZ).next();
-            bufferBuilder.vertex(x, minY, minZ).next();
-        }
-
-        for (double y = minY; y <= maxY; y += step) {
-            bufferBuilder.vertex(minX, y, minZ).next();
-            bufferBuilder.vertex(maxX, y, minZ).next();
-
-            bufferBuilder.vertex(minX, y, maxZ).next();
-            bufferBuilder.vertex(maxX, y, maxZ).next();
-
-            bufferBuilder.vertex(minX, y, minZ).next();
-            bufferBuilder.vertex(minX, y, maxZ).next();
-
-            bufferBuilder.vertex(maxX, y, minZ).next();
-            bufferBuilder.vertex(maxX, y, maxZ).next();
-        }
-    }
 
     public static class Region {
         public int minX;

@@ -1,8 +1,8 @@
 package org.by1337.bparser.inv.copy;
 
-import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +19,7 @@ public class InvItem {
     public InvItem(NbtCompound nbt0, ItemStack itemStack) {
         this.trimNBT = nbt0.copy();
         this.fullNBT = nbt0.copy();
-        if (trimNBT.contains("tag", NbtType.COMPOUND)){
+        if (trimNBT.contains("tag", NbtElement.COMPOUND_TYPE)) {
             NbtCompound tag = trimNBT.getCompound("tag");
             tag.remove("PublicBukkitValues");
             tag.remove("AttributeModifiers");

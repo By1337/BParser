@@ -1,78 +1,80 @@
 package org.by1337.bparser.commands;
 
+import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import net.fabricmc.fabric.api.client.command.v1.ClientCommandManager;
-import net.fabricmc.fabric.api.client.command.v1.FabricClientCommandSource;
+import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.scoreboard.Scoreboard;
-import net.minecraft.scoreboard.ScoreboardObjective;
-import net.minecraft.scoreboard.ScoreboardPlayerScore;
-import net.minecraft.scoreboard.Team;
-import net.minecraft.text.LiteralText;
+import net.minecraft.scoreboard.*;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
+import org.by1337.bparser.BParser;
 import org.by1337.bparser.text.RawMessageConvertor;
 import org.by1337.bparser.util.ChatUtil;
 
 import java.util.Collection;
+import java.util.Comparator;
 
 public class ScoreboardCopyCommand {
+    private static final Comparator<ScoreboardEntry> VANILLA_ORDER = Comparator.comparing(ScoreboardEntry::value).reversed().thenComparing(ScoreboardEntry::owner, String.CASE_INSENSITIVE_ORDER);
 
-    public static void register(){
-        ClientCommandManager.DISPATCHER.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("//scoreboard")
+
+    public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher) {
+        dispatcher.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("//scoreboard")
                 .executes(ctx -> {
                     MinecraftClient client = MinecraftClient.getInstance();
                     Scoreboard scoreboard = client.world.getScoreboard();
 
-                    ScoreboardObjective objective = scoreboard.getObjectiveForSlot(1);
+                    ScoreboardObjective objective = scoreboard.getObjectiveForSlot(ScoreboardDisplaySlot.SIDEBAR);
+
                     if (objective != null) {
                         Text header = objective.getDisplayName();
-                        MutableText headerText = new LiteralText("Header: ").append(header);
-                        ChatUtil.addCopyButton(headerText, RawMessageConvertor.convert(Text.Serializer.toJson(header)));
+                        MutableText headerText = Text.literal("Header: ").append(header);
+                        ChatUtil.addCopyButton(headerText, RawMessageConvertor.convert(Text.Serialization.toJsonString(header)));
                         ChatUtil.show(headerText);
 
-                        Collection<ScoreboardPlayerScore> scores = scoreboard.getAllPlayerScores(objective);
-                        LiteralText all = new LiteralText("");
+                        Collection<ScoreboardEntry> scores = scoreboard.getScoreboardEntries(objective);
+                        MutableText all = Text.literal("");
                         all.append(header).append("\n");
                         scores
                                 .stream()
-                                .sorted(ScoreboardPlayerScore.COMPARATOR.reversed())
+                                .sorted(VANILLA_ORDER)
                                 .forEach(score -> {
-                                    String playerName = score.getPlayerName();
-                                    Team team = scoreboard.getPlayerTeam(playerName);
+                                    BParser.LOGGER.info(score);
+                                    String playerName = score.owner();
+                                    Team team = scoreboard.getScoreHolderTeam(playerName);
 
                                     Text lineText;
                                     if (team != null) {
                                         String cleaned = playerName.replaceAll("§[0-9A-FK-ORa-fk-or]", "");
                                         if (cleaned.isEmpty()) {
-                                            lineText = team.decorateName(new LiteralText(""));
+                                            lineText = team.decorateName(Text.literal(""));
                                         } else {
-                                            lineText = team.decorateName(new LiteralText(playerName));
+                                            lineText = team.decorateName(Text.literal(playerName));
                                         }
                                     } else {
-                                        lineText = new LiteralText(playerName);
+                                        lineText = Text.literal(playerName);
                                     }
 
                                     String scoreCount;
-                                    if (score.getScore() < 10) {
-                                        scoreCount = "0" + score.getScore() + " ";
+                                    if (score.value() < 10) {
+                                        scoreCount = "0" + score.value() + " ";
                                     } else {
-                                        scoreCount = score.getScore() + " ";
+                                        scoreCount = score.value() + " ";
                                     }
 
                                     ChatUtil.show(
                                             ChatUtil.addCopyButton(
-                                                    new LiteralText(scoreCount).append(lineText),
-                                                    RawMessageConvertor.convert(Text.Serializer.toJson(lineText))
+                                                    Text.literal(scoreCount).append(lineText),
+                                                    RawMessageConvertor.convert(Text.Serialization.toJsonString(lineText))
                                             )
                                     );
                                     all.append(lineText).append("\n");
                                 });
                         ChatUtil.show(
                                 ChatUtil.addCopyButton(
-                                        new LiteralText(""),
+                                        Text.literal(""),
                                         "[copy all]",
-                                        RawMessageConvertor.convert(Text.Serializer.toJson(all)).replace("<br>", "\n")
+                                        RawMessageConvertor.convert(Text.Serialization.toJsonString(all)).replace("<br>", "\n")
                                 )
                         );
                     }

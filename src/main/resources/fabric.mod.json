@@ -23,9 +23,9 @@
 		"bparser.mixins.json"
 	],
 	"depends": {
-		"fabricloader": ">=0.15.6",
-		"minecraft": "~1.16.5",
-		"java": ">=8",
+		"fabricloader": ">=0.17.2",
+		"minecraft": "~1.20.4",
+		"java": ">=17",
 		"fabric": "*"
 	},
 	"suggests": {

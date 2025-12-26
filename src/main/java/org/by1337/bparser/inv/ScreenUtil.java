@@ -2,8 +2,9 @@ package org.by1337.bparser.inv;
 
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.inventory.Inventory;
+import net.minecraft.registry.Registries;
 import net.minecraft.screen.*;
-import net.minecraft.util.registry.Registry;
+import org.by1337.bparser.mixin.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
@@ -13,43 +14,34 @@ public class ScreenUtil {
     @Nullable
     public static Inventory getInventory(HandledScreen<?> handler0) {
         Object handler = handler0.getScreenHandler();
-        // handler.getType()
         if (handler instanceof GenericContainerScreenHandler) {
             return ((GenericContainerScreenHandler) handler).getInventory();
         } else if (handler instanceof Generic3x3ContainerScreenHandler) {
-            return getField(Generic3x3ContainerScreenHandler.class, "field_7806", handler);//inventory
-        }/* else if (handler instanceof AnvilScreenHandler) {
-            return getField(ForgingScreenHandler.class, "input", handler);
-        }*/ else if (handler instanceof BeaconScreenHandler) {
-            return getField(BeaconScreenHandler.class, "field_17287", handler);//payment
+            return ((Generic3x3ContainerScreenHandlerAccessor) handler).getInventory();
+        } else if (handler instanceof BeaconScreenHandler) {
+            return ((BeaconScreenHandlerAccessor) handler).getInventory();
         } else if (handler instanceof BlastFurnaceScreenHandler) {
-            return getField(AbstractFurnaceScreenHandler.class, "field_7824", handler);//inventory
+            return ((AbstractFurnaceScreenHandlerAccessor) handler).getInventory();
         } else if (handler instanceof BrewingStandScreenHandler) {
-            return getField(BrewingStandScreenHandler.class, "field_7788", handler);
+            return ((BrewingStandScreenHandlerAccessor) handler).getInventory();
         } else if (handler instanceof CraftingScreenHandler) {
-            return getField(CraftingScreenHandler.class, "field_7801", handler);//input
+            return ((CraftingScreenHandlerAccessor) handler).getInventory();
         } else if (handler instanceof EnchantmentScreenHandler) {
-            return getField(EnchantmentScreenHandler.class, "field_7809", handler);//inventory
+            return ((EnchantmentScreenHandlerAccessor) handler).getInventory();
         } else if (handler instanceof FurnaceScreenHandler) {
-            return getField(AbstractFurnaceScreenHandler.class, "field_7824", handler);
-        }/*else if (handler instanceof GrindstoneScreenHandler) {
-            return getField(GrindstoneScreenHandler.class, "inventory", handler);
-        }*/ else if (handler instanceof HopperScreenHandler) {
-            return getField(HopperScreenHandler.class, "field_7826", handler);//inventory
+            return ((AbstractFurnaceScreenHandlerAccessor) handler).getInventory();
+        } else if (handler instanceof HopperScreenHandler) {
+            return ((HopperScreenHandlerAccessor) handler).getInventory();
         } else if (handler instanceof LecternScreenHandler) {
-            return getField(LecternScreenHandler.class, "field_17313", handler);//inventory
-        }/*else if (handler instanceof LoomScreenHandler) {
-            return getField(LoomScreenHandler.class, "inventory", handler);
-        }*/ else if (handler instanceof MerchantScreenHandler) {
-            return getField(MerchantScreenHandler.class, "field_7863", handler);//merchantInventory
+            return ((LecternScreenHandlerAccessor) handler).getInventory();
+        } else if (handler instanceof MerchantScreenHandler) {
+            return ((MerchantScreenHandlerAccessor) handler).getInventory();
         } else if (handler instanceof ShulkerBoxScreenHandler) {
-            return getField(ShulkerBoxScreenHandler.class, "field_7867", handler);//inventory
-        }/*else if (handler instanceof SmithingScreenHandler) {
-            return getField(SmithingScreenHandler.class, "inventory", handler);
-        }*/ else if (handler instanceof SmokerScreenHandler) {
-            return getField(AbstractFurnaceScreenHandler.class, "field_7824", handler);
-        } else if (handler instanceof CartographyTableScreenHandler) {
-            return getField(CartographyTableScreenHandler.class, "field_17293", handler);//inventory
+            return ((ShulkerBoxScreenHandlerAccessor) handler).getInventory();
+        } else if (handler instanceof SmokerScreenHandler) {
+            return ((AbstractFurnaceScreenHandlerAccessor) handler).getInventory();
+        } else if (handler instanceof CartographyTableScreenHandler c) {
+            return c.inventory;
         }
         return null;
     }
@@ -58,7 +50,7 @@ public class ScreenUtil {
         ScreenHandler handler = handler0.getScreenHandler();
         if (handler != null) {
             ScreenHandlerType<?> type = handler.getType();
-            String id = Registry.SCREEN_HANDLER.getId(type).getPath();
+            String id = Registries.SCREEN_HANDLER.getId(type).getPath();
             switch (id) {
                 case "anvil": {
                     return InventoryType.ANVIL;

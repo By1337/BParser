@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import java.awt.*;
 
 public class ChatColor {
-    private Color color;
+    private final Color color;
 
     public ChatColor(@NotNull Color color) {
         this.color = color;
@@ -23,42 +23,25 @@ public class ChatColor {
     }
 
     private static String colorNameToHex(String name) {
-        switch (name) {
-            case "black":
-                return "#000000";
-            case "dark_blue":
-                return "#0000AA";
-            case "dark_green":
-                return "#00AA00";
-            case "dark_aqua":
-                return "#00AAAA";
-            case "dark_red":
-                return "#AA0000";
-            case "dark_purple":
-                return "#AA00AA";
-            case "gold":
-                return "#FFAA00";
-            case "gray":
-                return "#AAAAAA";
-            case "dark_gray":
-                return "#555555";
-            case "blue":
-                return "#5555FF";
-            case "green":
-                return "#55FF55";
-            case "aqua":
-                return "#55FFFF";
-            case "red":
-                return "#FF5555";
-            case "light_purple":
-                return "#FF55FF";
-            case "yellow":
-                return "#FFFF55";
-            case "white":
-                return "#FFFFFF";
-        }
-        ;
-        return name;
+        return switch (name) {
+            case "black" -> "#000000";
+            case "dark_blue" -> "#0000AA";
+            case "dark_green" -> "#00AA00";
+            case "dark_aqua" -> "#00AAAA";
+            case "dark_red" -> "#AA0000";
+            case "dark_purple" -> "#AA00AA";
+            case "gold" -> "#FFAA00";
+            case "gray" -> "#AAAAAA";
+            case "dark_gray" -> "#555555";
+            case "blue" -> "#5555FF";
+            case "green" -> "#55FF55";
+            case "aqua" -> "#55FFFF";
+            case "red" -> "#FF5555";
+            case "light_purple" -> "#FF55FF";
+            case "yellow" -> "#FFFF55";
+            case "white" -> "#FFFFFF";
+            default -> name;
+        };
     }
 
     public int manhattanDistance(ChatColor other){

@@ -34,7 +34,8 @@ public class SchemSaver {
 
     public void save(String name) {
         PlayerEntity player = Objects.requireNonNull(mc.player);
-        Vec3i origin = new Vec3i(player.getX(), player.getY(), player.getZ());
+        var pos = player.getBlockPos();
+        Vec3i origin = new Vec3i(pos.getX(), pos.getY(), pos.getZ());
         Vec3i min = new Vec3i(region.minX, region.minY, region.minZ);
         Vec3i offset = new BlockPos(min.getX() - origin.getX(), min.getY() - origin.getY(), min.getZ() - origin.getZ());
 
@@ -53,7 +54,7 @@ public class SchemSaver {
         }
 
         NbtCompound compound = new NbtCompound();
-        compound.putInt("DataVersion", SharedConstants.getGameVersion().getWorldVersion());
+        compound.putInt("DataVersion", SharedConstants.getGameVersion().getSaveVersion().getId());
         compound.putInt("Version", 2);
 
         compound.putIntArray("Offset", new int[]{min.getX(), min.getY(), min.getZ()});
@@ -91,8 +92,7 @@ public class SchemSaver {
 
                     BlockEntity blockEntity = mc.world.getBlockEntity(point);
                     if (blockEntity != null) {
-                        NbtCompound data = new NbtCompound();
-                        blockEntity.writeNbt(data);
+                        NbtCompound data =blockEntity.createNbt();
                         data.remove("id"); // Remove 'id' if it exists. We want 'Id'
                         // Positions are kept in NBT, we don't want that.
                         data.remove("x");
@@ -132,7 +132,7 @@ public class SchemSaver {
 
         try {
             schemFolder.toFile().mkdirs();
-            NbtIo.writeCompressed(compound, new File(schemFolder.toFile(), name));
+            NbtIo.writeCompressed(compound, new File(schemFolder.toFile(), name).toPath());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

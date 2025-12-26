@@ -21,23 +21,11 @@ public class ScreenAnimationParser {
         new Thread(() -> {
             while (!stop) {
                 if (MinecraftClient.getInstance().currentScreen != this.screen) {
-/*                    CustomToast customToast = new CustomToast(
-                            new LiteralText("Вы закрыли меню раньше :("),
-                            new LiteralText("Неудача!"),
-                            new ItemStack(Items.BARRIER)
-                    );
-                    MinecraftClient.getInstance().getToastManager().add(customToast);*/
                     return;
                 }
                 if (frameCreator.noDiff > 150) {
                     frameCreator.end();
                     stop = true;
-/*                    CustomToast customToast = new CustomToast(
-                            new LiteralText("Скопировано " + frameCreator.frames.size() + " кадров!"),
-                            new LiteralText("Скопировано!"),
-                            new ItemStack(Items.LIME_DYE)
-                    );
-                    MinecraftClient.getInstance().getToastManager().add(customToast);*/
                     return;
                 }
                 try {

@@ -1,18 +1,19 @@
 package org.by1337.bparser.toast;
 
-import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.toast.Toast;
 import net.minecraft.client.toast.ToastManager;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.ItemStack;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
 
-import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 public class CustomToast implements Toast {
+    private static final Identifier TEXTURE = new Identifier("toast/advancement");
     private final Text title;
     private final Text frameText;
     private final ItemStack icon;
@@ -23,34 +24,37 @@ public class CustomToast implements Toast {
         this.icon = icon;
     }
 
-    @Override
-    public Visibility draw(MatrixStack matrices, ToastManager manager, long startTime) {
-        manager.getGame().getTextureManager().bindTexture(TEXTURE);
-        RenderSystem.color3f(1.0F, 1.0F, 1.0F);
-        manager.drawTexture(matrices, 0, 0, 0, 0, this.getWidth(), this.getHeight());
-        List<OrderedText> list = manager.getGame().textRenderer.wrapLines(title, 125);
-        int i = 6746751;
-        if (list.size() == 1) {
-            manager.getGame().textRenderer.draw(matrices, frameText, 30.0F, 7.0F, i | -16777216);
-            manager.getGame().textRenderer.draw(matrices, list.get(0), 30.0F, 18.0F, -1);
-        } else {
-            int k;
-            if (startTime < 1500L) {
-                k = MathHelper.floor(MathHelper.clamp((float) (1500L - startTime) / 300.0F, 0.0F, 1.0F) * 255.0F) << 24 | 67108864;
-                manager.getGame().textRenderer.draw(matrices, frameText, 30.0F, 11.0F, i | k);
+    public Toast.Visibility draw(DrawContext context, ToastManager manager, long startTime) {
+        context.drawGuiTexture(TEXTURE, 0, 0, this.getWidth(), this.getHeight());
+        {
+            List<OrderedText> list = manager.getClient().textRenderer.wrapLines(title, 125);
+            int i = 16746751;
+            if (list.size() == 1) {
+                context.drawText(manager.getClient().textRenderer, frameText, 30, 7, i | -16777216, false);
+                context.drawText(manager.getClient().textRenderer, (OrderedText) list.get(0), 30, 18, -1, false);
             } else {
-                k = MathHelper.floor(MathHelper.clamp((float) (startTime - 1500L) / 300.0F, 0.0F, 1.0F) * 252.0F) << 24 | 67108864;
-                int var10000 = this.getHeight() / 2;
-                int var10001 = list.size();
-                int l = var10000 - var10001 * 9 / 2;
+                int j = 1500;
+                float f = 300.0F;
+                if (startTime < 1500L) {
+                    int k = MathHelper.floor(MathHelper.clamp((float) (1500L - startTime) / 300.0F, 0.0F, 1.0F) * 255.0F) << 24 | 67108864;
+                    context.drawText(manager.getClient().textRenderer, frameText, 30, 11, i | k, false);
+                } else {
+                    int k = MathHelper.floor(MathHelper.clamp((float) (startTime - 1500L) / 300.0F, 0.0F, 1.0F) * 252.0F) << 24 | 67108864;
+                    int var10000 = this.getHeight() / 2;
+                    int var10001 = list.size();
+                    Objects.requireNonNull(manager.getClient().textRenderer);
+                    int l = var10000 - var10001 * 9 / 2;
 
-                for (Iterator<OrderedText> var12 = list.iterator(); var12.hasNext(); l += 9) {
-                    OrderedText orderedText = var12.next();
-                    manager.getGame().textRenderer.draw(matrices, orderedText, 30.0F, (float) l, 16777215 | k);
+                    for (OrderedText orderedText : list) {
+                        context.drawText(manager.getClient().textRenderer, orderedText, 30, l, 16777215 | k, false);
+                        Objects.requireNonNull(manager.getClient().textRenderer);
+                        l += 9;
+                    }
                 }
             }
+
+            context.drawItemWithoutEntity(icon, 8, 8);
+            return (double) startTime >= (double) 5000.0F * manager.getNotificationDisplayTimeMultiplier() ? Visibility.HIDE : Visibility.SHOW;
         }
-        manager.getGame().getItemRenderer().renderInGui(icon, 8, 8);
-        return startTime >= 5000L ? Visibility.HIDE : Visibility.SHOW;
     }
 }

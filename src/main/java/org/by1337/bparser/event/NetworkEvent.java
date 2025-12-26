@@ -2,7 +2,7 @@ package org.by1337.bparser.event;
 
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
-import net.minecraft.network.Packet;
+import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.*;
 
 public class NetworkEvent {

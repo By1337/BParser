@@ -7,10 +7,9 @@ import net.minecraft.inventory.Inventory;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
+import net.minecraft.registry.Registries;
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Util;
-import net.minecraft.util.registry.Registry;
 import org.by1337.bparser.inv.ScreenUtil;
 import org.by1337.bparser.text.RawMessageConvertor;
 import org.jetbrains.annotations.Nullable;
@@ -75,7 +74,7 @@ public class MenuSaver {
 
     public String saveNoAnimation(boolean setSlots) {
         StringBuilder sb = new StringBuilder();
-        sb.append(new TranslatableText("config.bparser.copyright").getString());
+        sb.append(Text.translatable("config.bparser.copyright").getString());
 
         sb.append("\nid: auto_gen:").append(randomUUID).append("\n");
         sb.append("provider: default\n");
@@ -85,7 +84,7 @@ public class MenuSaver {
 
 
         sb.append("title: ")
-                .append(quoteAndEscape(fromRaw(Text.Serializer.toJson(screen.getTitle())))).append("\n");
+                .append(quoteAndEscape(fromRaw(Text.Serialization.toJsonString(screen.getTitle())))).append("\n");
 
         sb.append("items:\n");
         for (String id : items.keySet()) {
@@ -95,7 +94,7 @@ public class MenuSaver {
             }
             sb.append("  ").append(id).append(":\n");
             boolean isBaseHead = false;
-            NbtCompound tag = item.itemStack.getTag();
+            NbtCompound tag = item.itemStack.getNbt();
             if (setSlots && !item.slots.isEmpty()) {
                 if (item.slots.size() == 1) {
                     sb.append("    slot: ").append(item.slots.get(0)).append("\n");
@@ -189,7 +188,7 @@ public class MenuSaver {
                 sb.append("    ").append("amount: ").append(item.itemStack.getCount()).append("\n");
             }
             if (!isBaseHead) {
-                String material = Registry.ITEM.getKey(item.itemStack.getItem()).get().getValue().getPath();
+                String material = Registries.ITEM.getKey(item.itemStack.getItem()).get().getValue().getPath();
                 sb.append("    ").append("material: ").append(material).append("\n");
             }
             if (item.itemStack.getDamage() != 0) {

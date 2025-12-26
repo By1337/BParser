@@ -1,8 +1,8 @@
 package org.by1337.bparser.listener;
 
+import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import net.fabricmc.fabric.api.client.command.v1.ClientCommandManager;
-import net.fabricmc.fabric.api.client.command.v1.FabricClientCommandSource;
+import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.client.screen.v1.Screens;
 import net.fabricmc.loader.api.FabricLoader;
@@ -11,9 +11,8 @@ import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
+import net.minecraft.text.TextContent;
 import org.by1337.bparser.cfg.Config;
 import org.by1337.bparser.gui.CustomButtonWidget;
 import org.by1337.bparser.inv.ScreenUtil;
@@ -29,24 +28,23 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class ScreenListener {
-    public void register() {
+    public ScreenListener() {
         final int buttonWidth = 58;
         final int buttonHeight = 16;
 
         ScreenEvents.AFTER_INIT.register((client, screen, width, height) -> {
             if (!Config.INSTANCE.menuCopy) return;
-            if (screen instanceof HandledScreen) {
-                HandledScreen<?> handledScreen = (HandledScreen<?>) screen;
+            if (screen instanceof HandledScreen<?> handledScreen) {
                 Inventory inventory = ScreenUtil.getInventory(handledScreen);
                 if (inventory != null) {
                     final ScreenAnimationParser parser = new ScreenAnimationParser(inventory, screen);
                     Screens.getButtons(screen).add(
                             new CustomButtonWidget(
                                     (width / 2) - (buttonWidth / 2) + 58 - 3, (height / 2) - (buttonHeight / 2) - (103 + buttonHeight), buttonWidth, buttonHeight, Text.of("save anim"), (btn) -> {
-                                if (parser.isStop()) {
+                                if (!parser.isStop()) {
                                     CustomToast customToast = new CustomToast(
-                                            new TranslatableText("lang.bparser.menu.wait2"),
-                                            new TranslatableText("lang.bparser.menu.wait"),
+                                            Text.translatable("lang.bparser.menu.wait2"),
+                                            Text.translatable("lang.bparser.menu.wait"),
                                             new ItemStack(Items.BARRIER)
                                     );
                                     MinecraftClient.getInstance().getToastManager().add(customToast);
@@ -66,14 +64,16 @@ public class ScreenListener {
                 }
             }
         });
+    }
 
-        ClientCommandManager.DISPATCHER.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("//menu_copy")
+    public void register(CommandDispatcher<FabricClientCommandSource> dispatcher) {
+        dispatcher.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("//menu_copy")
                 .executes(ctx -> {
                     Config.INSTANCE.menuCopy = !Config.INSTANCE.menuCopy;
                     if (Config.INSTANCE.menuCopy) {
-                        ctx.getSource().sendFeedback(new TranslatableText("lang.bparser.menu.on"));
+                        ctx.getSource().sendFeedback(Text.translatable("lang.bparser.menu.on"));
                     } else {
-                        ctx.getSource().sendFeedback(new TranslatableText("lang.bparser.menu.off"));
+                        ctx.getSource().sendFeedback(Text.translatable("lang.bparser.menu.off"));
                     }
                     Config.INSTANCE.save();
                     return 1;
@@ -84,8 +84,8 @@ public class ScreenListener {
     private String generateSaveName(MenuSaver menuSaver, HandledScreen<?> screen) {
         Path menuFolder = FabricLoader.getInstance().getGameDir().resolve("mods/menus");
 
-        if (screen.getTitle() instanceof LiteralText) {
-            String json = Text.Serializer.toJson(screen.getTitle());
+        if (screen.getTitle().getContent() instanceof TextContent) {
+            String json = Text.Serialization.toJsonString(screen.getTitle());
             String title = RawMessageConvertor.convert(json, true);
             String s = StringUtil.removeIf(
                     title,
@@ -116,8 +116,8 @@ public class ScreenListener {
             Files.write(folder.resolve(fileName), data.getBytes(StandardCharsets.UTF_8));
 
             CustomToast customToast = new CustomToast(
-                    new TranslatableText("lang.bparser.menu.saved.path", fileName),
-                    new TranslatableText("lang.bparser.menu.saved"),
+                    Text.translatable("lang.bparser.menu.saved.path", fileName),
+                    Text.translatable("lang.bparser.menu.saved"),
                     new ItemStack(Items.LIME_DYE)
             );
             MinecraftClient.getInstance().getToastManager().add(customToast);
