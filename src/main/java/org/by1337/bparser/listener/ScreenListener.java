@@ -43,7 +43,7 @@ public class ScreenListener {
                     Screens.getButtons(screen).add(
                             new CustomButtonWidget(
                                     (width / 2) - (buttonWidth / 2) + 58 - 3, (height / 2) - (buttonHeight / 2) - (103 + buttonHeight), buttonWidth, buttonHeight, Text.of("save anim"), (btn) -> {
-                                if (parser.isStop()) {
+                                if (!parser.isStop()) {
                                     CustomToast customToast = new CustomToast(
                                             new TranslatableText("lang.bparser.menu.wait2"),
                                             new TranslatableText("lang.bparser.menu.wait"),

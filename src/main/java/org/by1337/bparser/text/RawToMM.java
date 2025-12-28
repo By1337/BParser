@@ -16,81 +16,88 @@ public class RawToMM {
 
     public static String toMM(String raw) {
         StringBuilder out = new StringBuilder();
-        if (!raw.startsWith("{")) return "";
+        if (!raw.startsWith("{") && !raw.startsWith("[")) return raw;
         JsonParser parser = new JsonParser();
-        JsonObject tag = parser.parse(raw).getAsJsonObject();
+        JsonElement tag = parser.parse(raw);
         toMM(tag, out, new TextDecorator(out));
         return out.toString();
     }
 
 
-    private static void toMM(JsonObject raw, StringBuilder out, TextDecorator decorator) {
-        String text = raw.has("text") ? raw.get("text").getAsString() : "";
-        if (text.length() == 1) {
-            if (raw.has("color")) {
-                String color = raw.get("color").getAsString();
-                raw.addProperty("color", colorNameToHex(color));
-            }
-        }
-        int index = out.length();
-        decorator.accept(raw);
-
-        if (raw.has("clickEvent")) {
-            JsonObject clickEvent = raw.getAsJsonObject("clickEvent");
-            String action = clickEvent.get("action").getAsString();
-            String value = clickEvent.get("value").getAsString();
-            out.append("<click:").append(action).append(":'").append(value).append("'>");
-        }
-
-        if (raw.has("hoverEvent")) {
-            JsonObject hoverEvent = raw.getAsJsonObject("hoverEvent");
-            String action = hoverEvent.get("action").getAsString();
-            out.append("<hover:").append(action).append(":'");
-
-            JsonElement contents = hoverEvent.get("contents");
-            if (contents.isJsonObject()) {
-                toMM(contents.getAsJsonObject(), out, new TextDecorator(out));
-            } else {
-                out.append(contents.getAsString());
-            }
-            out.append("'>");
-        }
-
-        if (text.isEmpty() && !raw.has("hoverEvent") && !raw.has("clickEvent")&& !raw.has("extra")){
-            out.setLength(index);
-            return;
-        }
-        out.append(text.replace("\n", "<br>"));
-        Decoration stackColor = decorator.currentColor.get();
-        if (stackColor != null && stackColor.asString().contains("gradient")) {
-            out.append("</gradient>");
-            decorator.currentColor.set(null);
-        }
-
-        if (raw.has("hoverEvent")) {
-            out.append("</hover>");
-            decorator.clearStack();
-        }
-        if (raw.has("clickEvent")) {
-            out.append("</click>");
-            decorator.clearStack();
-        }
-
-        if (raw.has("extra")) {
-            if (Config.INSTANCE.chat.gradients) {
-                JsonArray extra = raw.getAsJsonArray("extra");
-                raw.add("extra", findGradients(extra));
-            }
-            JsonArray extra = raw.getAsJsonArray("extra");
-            for (JsonElement elem : extra) {
-                if (elem.isJsonObject()) {
-                    toMM(elem.getAsJsonObject(), out, decorator.overlap());
-                } else {
-                    JsonObject obj = new JsonObject();
-                    obj.addProperty("text", elem.getAsString());
-                    toMM(obj, out, decorator.overlap());
+    private static void toMM(JsonElement element, StringBuilder out, TextDecorator decorator) {
+        if (element.isJsonObject()) {
+            JsonObject raw = element.getAsJsonObject();
+            String text = raw.has("text") ? raw.get("text").getAsString() : "";
+            if (text.length() == 1) {
+                if (raw.has("color")) {
+                    String color = raw.get("color").getAsString();
+                    raw.addProperty("color", colorNameToHex(color));
                 }
             }
+            int index = out.length();
+            decorator.accept(raw);
+
+            if (raw.has("clickEvent")) {
+                JsonObject clickEvent = raw.getAsJsonObject("clickEvent");
+                String action = clickEvent.get("action").getAsString();
+                String value = clickEvent.get("value").getAsString();
+                out.append("<click:").append(action).append(":'").append(value).append("'>");
+            }
+
+            if (raw.has("hoverEvent")) {
+                JsonObject hoverEvent = raw.getAsJsonObject("hoverEvent");
+                String action = hoverEvent.get("action").getAsString();
+                out.append("<hover:").append(action).append(":'");
+
+                JsonElement contents = hoverEvent.get("contents");
+                if (contents.isJsonObject()) {
+                    toMM(contents.getAsJsonObject(), out, new TextDecorator(out));
+                } else {
+                    out.append(contents.getAsString());
+                }
+                out.append("'>");
+            }
+
+            if (text.isEmpty() && !raw.has("hoverEvent") && !raw.has("clickEvent") && !raw.has("extra")) {
+                out.setLength(index);
+                return;
+            }
+            out.append(text.replace("\n", "<br>"));
+            Decoration stackColor = decorator.currentColor.get();
+            if (stackColor != null && stackColor.asString().contains("gradient")) {
+                out.append("</gradient>");
+                decorator.currentColor.set(null);
+            }
+
+            if (raw.has("hoverEvent")) {
+                out.append("</hover>");
+                decorator.clearStack();
+            }
+            if (raw.has("clickEvent")) {
+                out.append("</click>");
+                decorator.clearStack();
+            }
+
+            if (raw.has("extra")) {
+                if (Config.INSTANCE.chat.gradients) {
+                    JsonArray extra = raw.getAsJsonArray("extra");
+                    raw.add("extra", findGradients(extra));
+                }
+                JsonArray extra = raw.getAsJsonArray("extra");
+                for (JsonElement elem : extra) {
+                    toMM(elem, out, decorator.overlap());
+                }
+            }
+        } else if (element.isJsonArray()) {
+            JsonArray extra = element.getAsJsonArray();
+            if (Config.INSTANCE.chat.gradients) {
+                extra = findGradients(extra);
+            }
+            for (JsonElement jsonElement : extra) {
+                toMM(jsonElement, out, decorator.overlap());
+            }
+        } else if (element.isJsonPrimitive()) {
+            out.append(element.getAsString());
         }
     }
 
@@ -131,6 +138,7 @@ public class RawToMM {
         }
         return name;
     }
+
     private static String colorHexToName(String name) {
         switch (name) {
             case "#000000":
@@ -274,6 +282,7 @@ public class RawToMM {
             }
         }
     }
+
     private static boolean isWhite(String text) {
         return text.equals("white") || text.equals("#FFFFFF");
     }
@@ -294,7 +303,8 @@ public class RawToMM {
         public String asString() {
             return String.valueOf(data);
         }
-        public boolean isEqualsColors(Decoration other){
+
+        public boolean isEqualsColors(Decoration other) {
             if (other == null) return false;
             if (other.token != token) return false;
             return colorNameToHex(asString()).equals(colorNameToHex(other.asString()));
