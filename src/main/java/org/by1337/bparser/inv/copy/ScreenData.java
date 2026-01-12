@@ -1,8 +1,8 @@
 package org.by1337.bparser.inv.copy;
 
-import net.minecraft.inventory.Inventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -12,18 +12,15 @@ import java.util.Objects;
 public class ScreenData {
     public final Map<Integer, InvItem> content;
 
-    public ScreenData(Inventory inventory) {
+    public ScreenData(Container inventory) {
         content = new HashMap<>();
-        for (int slot = 0; slot < inventory.size(); slot++) {
-            ItemStack itemStack = inventory.getStack(slot);
+        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+            ItemStack itemStack = inventory.getItem(slot);
             if (itemStack == null || itemStack.isEmpty()) {
                 content.put(slot, InvItem.AIR);
             } else {
-                NbtCompound compound = new NbtCompound();
-                itemStack.writeNbt(compound);
-                content.put(slot, new InvItem(compound, itemStack.copy()));
+                content.put(slot, new InvItem(itemStack));
             }
-
         }
     }
 

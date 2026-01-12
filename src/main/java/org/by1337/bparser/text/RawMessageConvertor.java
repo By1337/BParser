@@ -4,20 +4,21 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import net.minecraft.network.chat.Component;
 import org.by1337.bparser.cfg.Config;
 
 public class RawMessageConvertor {
 
-    public static String convert(String rawMessage) {
+
+    public static String convert(Component component) {
         if (Config.INSTANCE.textType == Config.TextType.LEGACY) {
-            return convert(rawMessage, false);
+            return convert(component, false);
         }
-        return RawToMM.toMM(rawMessage);
+        return RawToMM.toMM(component);
     }
 
-    public static String convert(String rawMessage, boolean noColors) {
-        if (!rawMessage.startsWith("{")) return "";
-        JsonObject tag = JsonParser.parseString(rawMessage).getAsJsonObject();
+    public static String convert(Component component, boolean noColors) {
+        JsonElement tag = ComponentUtil.toJson(component);
         return toLegacy(tag, new StringBuilder(), noColors).toString();
     }
 

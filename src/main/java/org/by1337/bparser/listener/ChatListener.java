@@ -4,14 +4,13 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
-import net.minecraft.text.TextContent;
-import org.by1337.bparser.BParser;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentContents;
+import net.minecraft.network.chat.MutableComponent;
 import org.by1337.bparser.cfg.Config;
 import org.by1337.bparser.event.GameMessageS2CPacketAccessor;
 import org.by1337.bparser.event.NetworkEvent;
-import org.by1337.bparser.text.RawMessageConvertor;
+import org.by1337.bparser.text.ComponentUtil;
 import org.by1337.bparser.util.ChatUtil;
 
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
@@ -21,15 +20,14 @@ public class ChatListener {
         NetworkEvent.CHAT_EVENT.register(packet -> {
             if (!Config.INSTANCE.chat.clickToCopy)
                 return;
-            if (packet.content().getContent() instanceof TextContent) {
-                Text msg = packet.content();
-                MutableText literalText = Text.literal("").append(msg);
+            if (packet.content().getContents() instanceof ComponentContents) {
+                Component msg = packet.content();
+                MutableComponent literalText = Component.literal("").append(msg);
 
-                String raw = Text.Serialization.toJsonString(packet.content());
-                String result = RawMessageConvertor.convert(raw);
+                String result = ComponentUtil.convert(packet.content());
                 ChatUtil.addCopyButton(literalText, " [copy]", result);
                 if (Config.INSTANCE.chat.asRaw) {
-                    ChatUtil.addCopyButton(literalText, "[raw]", raw);
+                    ChatUtil.addCopyButton(literalText, "[raw]", ComponentUtil.toString(packet.content()));
                 }
                 ((GameMessageS2CPacketAccessor) (Object) packet).setMessage(literalText);
             }
@@ -41,9 +39,9 @@ public class ChatListener {
                 .executes(ctx -> {
                     Config.INSTANCE.chat.clickToCopy = !Config.INSTANCE.chat.clickToCopy;
                     if (Config.INSTANCE.chat.clickToCopy) {
-                        ctx.getSource().sendFeedback(Text.translatable("lang.bparser.chat.on"));
+                        ctx.getSource().sendFeedback(Component.translatable("lang.bparser.chat.on"));
                     } else {
-                        ctx.getSource().sendFeedback(Text.translatable("lang.bparser.chat.off"));
+                        ctx.getSource().sendFeedback(Component.translatable("lang.bparser.chat.off"));
                     }
                     Config.INSTANCE.save();
                     return 1;
@@ -52,9 +50,9 @@ public class ChatListener {
                         .executes(ctx -> {
                             Config.INSTANCE.chat.asRaw = !Config.INSTANCE.chat.asRaw;
                             if (Config.INSTANCE.chat.asRaw) {
-                                ctx.getSource().sendFeedback(Text.translatable("lang.bparser.chat.raw.on"));
+                                ctx.getSource().sendFeedback(Component.translatable("lang.bparser.chat.raw.on"));
                             } else {
-                                ctx.getSource().sendFeedback(Text.translatable("lang.bparser.chat.raw.off"));
+                                ctx.getSource().sendFeedback(Component.translatable("lang.bparser.chat.raw.off"));
                             }
                             Config.INSTANCE.save();
                             return 1;
@@ -64,9 +62,9 @@ public class ChatListener {
                         .executes(ctx -> {
                             Config.INSTANCE.chat.gradients = !Config.INSTANCE.chat.gradients;
                             if (Config.INSTANCE.chat.gradients) {
-                                ctx.getSource().sendFeedback(Text.translatable("lang.bparser.chat.gradients.on"));
+                                ctx.getSource().sendFeedback(Component.translatable("lang.bparser.chat.gradients.on"));
                             } else {
-                                ctx.getSource().sendFeedback(Text.translatable("lang.bparser.chat.gradients.off"));
+                                ctx.getSource().sendFeedback(Component.translatable("lang.bparser.chat.gradients.off"));
                             }
                             Config.INSTANCE.save();
                             return 1;
@@ -85,9 +83,9 @@ public class ChatListener {
                                     try {
                                         Config.INSTANCE.textType = Config.TextType.valueOf(input.toUpperCase());
                                         Config.INSTANCE.save();
-                                        ctx.getSource().sendFeedback(Text.translatable("lang.bparser.chat.type", input));
+                                        ctx.getSource().sendFeedback(Component.translatable("lang.bparser.chat.type", input));
                                     } catch (IllegalArgumentException e) {
-                                        ctx.getSource().sendError(Text.translatable("lang.bparser.chat.type.error", input));
+                                        ctx.getSource().sendError(Component.translatable("lang.bparser.chat.type.error", input));
                                         return 0;
                                     }
                                     return 1;

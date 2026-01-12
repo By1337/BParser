@@ -1,9 +1,9 @@
 package org.by1337.bparser.inv;
 
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.registry.Registries;
-import net.minecraft.screen.*;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.Container;
+import net.minecraft.world.inventory.*;
 import org.by1337.bparser.mixin.*;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,45 +12,45 @@ import java.lang.reflect.Field;
 public class ScreenUtil {
 
     @Nullable
-    public static Inventory getInventory(HandledScreen<?> handler0) {
-        Object handler = handler0.getScreenHandler();
-        if (handler instanceof GenericContainerScreenHandler) {
-            return ((GenericContainerScreenHandler) handler).getInventory();
-        } else if (handler instanceof Generic3x3ContainerScreenHandler) {
-            return ((Generic3x3ContainerScreenHandlerAccessor) handler).getInventory();
-        } else if (handler instanceof BeaconScreenHandler) {
-            return ((BeaconScreenHandlerAccessor) handler).getInventory();
-        } else if (handler instanceof BlastFurnaceScreenHandler) {
-            return ((AbstractFurnaceScreenHandlerAccessor) handler).getInventory();
-        } else if (handler instanceof BrewingStandScreenHandler) {
-            return ((BrewingStandScreenHandlerAccessor) handler).getInventory();
-        } else if (handler instanceof CraftingScreenHandler) {
-            return ((CraftingScreenHandlerAccessor) handler).getInventory();
-        } else if (handler instanceof EnchantmentScreenHandler) {
-            return ((EnchantmentScreenHandlerAccessor) handler).getInventory();
-        } else if (handler instanceof FurnaceScreenHandler) {
-            return ((AbstractFurnaceScreenHandlerAccessor) handler).getInventory();
-        } else if (handler instanceof HopperScreenHandler) {
-            return ((HopperScreenHandlerAccessor) handler).getInventory();
-        } else if (handler instanceof LecternScreenHandler) {
-            return ((LecternScreenHandlerAccessor) handler).getInventory();
-        } else if (handler instanceof MerchantScreenHandler) {
-            return ((MerchantScreenHandlerAccessor) handler).getInventory();
-        } else if (handler instanceof ShulkerBoxScreenHandler) {
-            return ((ShulkerBoxScreenHandlerAccessor) handler).getInventory();
-        } else if (handler instanceof SmokerScreenHandler) {
-            return ((AbstractFurnaceScreenHandlerAccessor) handler).getInventory();
-        } else if (handler instanceof CartographyTableScreenHandler c) {
-            return c.inventory;
+    public static Container getInventory(AbstractContainerScreen<?> handler0) {
+        Object handler = handler0.getMenu();
+        if (handler instanceof ChestMenu) {
+            return ((ChestMenu) handler).getContainer();
+        } else if (handler instanceof DispenserMenu) {
+            return ((DispenserMenuAccessor) handler).getInventory();
+        } else if (handler instanceof BeaconMenu) {
+            return ((BeaconMenuAccessor) handler).getInventory();
+        } else if (handler instanceof BlastFurnaceMenu) {
+            return ((AbstractFurnaceMenuAccessor) handler).getInventory();
+        } else if (handler instanceof BrewingStandMenu) {
+            return ((BrewingStandMenuAccessor) handler).getInventory();
+        } else if (handler instanceof CraftingMenu) {
+            return ((AbstractCraftingMenuAccessor) handler).getInventory();
+        } else if (handler instanceof EnchantmentMenu) {
+            return ((EnchantmentMenuAccessor) handler).getInventory();
+        } else if (handler instanceof FurnaceMenu) {
+            return ((AbstractFurnaceMenuAccessor) handler).getInventory();
+        } else if (handler instanceof HopperMenu) {
+            return ((HopperMenuAccessor) handler).getInventory();
+        } else if (handler instanceof LecternMenu) {
+            return ((LecternMenuAccessor) handler).getInventory();
+        } else if (handler instanceof MerchantMenu) {
+            return ((MerchantMenuAccessor) handler).getInventory();
+        } else if (handler instanceof ShulkerBoxMenu) {
+            return ((ShulkerBoxMenuAccessor) handler).getInventory();
+        } else if (handler instanceof SmokerMenu) {
+            return ((AbstractFurnaceMenuAccessor) handler).getInventory();
+        } else if (handler instanceof CartographyTableMenu c) {
+            return c.container;
         }
         return null;
     }
 
-    public static InventoryType getBukkitType(HandledScreen<?> handler0) {
-        ScreenHandler handler = handler0.getScreenHandler();
+    public static InventoryType getBukkitType(AbstractContainerScreen<?> handler0) {
+        AbstractContainerMenu handler = handler0.getMenu();
         if (handler != null) {
-            ScreenHandlerType<?> type = handler.getType();
-            String id = Registries.SCREEN_HANDLER.getId(type).getPath();
+            MenuType<?> type = handler.getType();
+            String id = BuiltInRegistries.MENU.getKey(type).getPath();
             switch (id) {
                 case "anvil": {
                     return InventoryType.ANVIL;
@@ -109,17 +109,5 @@ public class ScreenUtil {
             }
         }
         return InventoryType.CHEST;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T> T getField(Class<?> c, String field, Object from) {
-        try {
-            Field f = c.getDeclaredField(field);
-            f.setAccessible(true);
-            return (T) f.get(from);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 }

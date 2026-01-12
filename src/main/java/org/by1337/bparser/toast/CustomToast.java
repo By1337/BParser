@@ -1,3 +1,4 @@
+/*
 package org.by1337.bparser.toast;
 
 import net.minecraft.client.gui.DrawContext;
@@ -58,3 +59,4 @@ public class CustomToast implements Toast {
         }
     }
 }
+*/

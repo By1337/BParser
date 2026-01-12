@@ -2,13 +2,13 @@ package org.by1337.bparser.event;
 
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
-import net.minecraft.network.packet.Packet;
-import net.minecraft.network.packet.s2c.play.*;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.*;
 
 public class NetworkEvent {
-    public static final Event<PacketCallback<GameMessageS2CPacket>> CHAT_EVENT = EventFactory.createArrayBacked(PacketCallback.class,
+    public static final Event<PacketCallback<ClientboundSystemChatPacket>> CHAT_EVENT = EventFactory.createArrayBacked(PacketCallback.class,
             (listeners) -> (packet) -> {
-                for (PacketCallback<GameMessageS2CPacket> listener : listeners) {
+                for (PacketCallback<ClientboundSystemChatPacket> listener : listeners) {
                     listener.on(packet);
                 }
             }
@@ -18,16 +18,16 @@ public class NetworkEvent {
             listener.on(packet);
         }
     });
-    public static final Event<PacketCallback<ParticleS2CPacket>> PARTICLE = EventFactory.createArrayBacked(PacketCallback.class,
+    public static final Event<PacketCallback<ClientboundLevelParticlesPacket>> PARTICLE = EventFactory.createArrayBacked(PacketCallback.class,
             (listeners) -> (packet) -> {
-                for (PacketCallback<ParticleS2CPacket> listener : listeners) {
+                for (PacketCallback<ClientboundLevelParticlesPacket> listener : listeners) {
                     listener.on(packet);
                 }
             }
     );
-    public static final Event<PacketCallback<CooldownUpdateS2CPacket>> COOLDOWN_UPDATE = EventFactory.createArrayBacked(PacketCallback.class,
+    public static final Event<PacketCallback<ClientboundCooldownPacket>> COOLDOWN_UPDATE = EventFactory.createArrayBacked(PacketCallback.class,
             (listeners) -> (packet) -> {
-                for (PacketCallback<CooldownUpdateS2CPacket> listener : listeners) {
+                for (PacketCallback<ClientboundCooldownPacket> listener : listeners) {
                     listener.on(packet);
                 }
             }
@@ -38,20 +38,20 @@ public class NetworkEvent {
         }
     });
 
-    public static final Event<PacketCallback<EntityStatusEffectS2CPacket>> MOB_EFFECT = EventFactory.createArrayBacked(PacketCallback.class, (listeners) -> (packet) -> {
-        for (PacketCallback<EntityStatusEffectS2CPacket> listener : listeners) {
+    public static final Event<PacketCallback<ClientboundUpdateMobEffectPacket>> MOB_EFFECT = EventFactory.createArrayBacked(PacketCallback.class, (listeners) -> (packet) -> {
+        for (PacketCallback<ClientboundUpdateMobEffectPacket> listener : listeners) {
             listener.on(packet);
         }
     });
 
-    public static final Event<PacketCallback<TitleS2CPacket>> TITLE = EventFactory.createArrayBacked(PacketCallback.class, (listeners) -> (packet) -> {
-        for (PacketCallback<TitleS2CPacket> listener : listeners) {
+    public static final Event<PacketCallback<ClientboundSetTitleTextPacket>> TITLE = EventFactory.createArrayBacked(PacketCallback.class, (listeners) -> (packet) -> {
+        for (PacketCallback<ClientboundSetTitleTextPacket> listener : listeners) {
             listener.on(packet);
         }
     });
 
-    public static final Event<PacketCallback<BossBarS2CPacket>> BOSS_BAR = EventFactory.createArrayBacked(PacketCallback.class, (listeners) -> (packet) -> {
-        for (PacketCallback<BossBarS2CPacket> listener : listeners) {
+    public static final Event<PacketCallback<ClientboundBossEventPacket>> BOSS_BAR = EventFactory.createArrayBacked(PacketCallback.class, (listeners) -> (packet) -> {
+        for (PacketCallback<ClientboundBossEventPacket> listener : listeners) {
             listener.on(packet);
         }
     });

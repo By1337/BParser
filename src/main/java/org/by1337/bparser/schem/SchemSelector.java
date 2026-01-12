@@ -10,14 +10,13 @@ import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.by1337.bparser.render.RenderUtil;
 
 public class SchemSelector {
@@ -29,17 +28,17 @@ public class SchemSelector {
 
     public SchemSelector() {
         AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
-            if (!enabled) return ActionResult.PASS;
+            if (!enabled) return InteractionResult.PASS;
             pos1 = pos;
             if (pos2 == null) pos2 = pos;
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         });
         UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
-            if (!enabled) return ActionResult.PASS;
+            if (!enabled) return InteractionResult.PASS;
             BlockPos pos = hitResult.getBlockPos();
             pos2 = pos;
             if (pos1 == null) pos1 = pos;
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         });
         WorldRenderEvents.LAST.register(this::onRenderWorld);
     }
@@ -47,7 +46,7 @@ public class SchemSelector {
     public void register(CommandDispatcher<FabricClientCommandSource> dispatcher) {
         dispatcher.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("//schem")
                 .executes(ctx -> {
-                            ctx.getSource().sendFeedback(Text.translatable("lang.bparser.select.usage"));
+                            ctx.getSource().sendFeedback(Component.translatable("lang.bparser.select.usage"));
                             return 1;
                         }
                 )
@@ -55,11 +54,11 @@ public class SchemSelector {
                         .executes(ctx -> {
                             enabled = !enabled;
                             if (enabled) {
-                                ctx.getSource().sendFeedback(Text.translatable("lang.bparser.select.on"));
+                                ctx.getSource().sendFeedback(Component.translatable("lang.bparser.select.on"));
                             } else {
                                 pos1 = null;
                                 pos2 = null;
-                                ctx.getSource().sendFeedback(Text.translatable("lang.bparser.select.off"));
+                                ctx.getSource().sendFeedback(Component.translatable("lang.bparser.select.off"));
                             }
                             return 1;
                         })
@@ -67,8 +66,8 @@ public class SchemSelector {
                 .then(LiteralArgumentBuilder.<FabricClientCommandSource>literal("pos1")
                         .executes(ctx -> {
                             enabled = true;
-                            PlayerEntity player = MinecraftClient.getInstance().player;
-                            pos1 = player.getBlockPos();
+                            LocalPlayer player = Minecraft.getInstance().player;
+                            pos1 = player.getOnPos();
                             fixSize();
                             return 1;
                         })
@@ -77,8 +76,8 @@ public class SchemSelector {
                 .then(LiteralArgumentBuilder.<FabricClientCommandSource>literal("pos2")
                         .executes(ctx -> {
                             enabled = true;
-                            PlayerEntity player = MinecraftClient.getInstance().player;
-                            pos2 = player.getBlockPos();
+                            LocalPlayer player = Minecraft.getInstance().player;
+                            pos2 = player.getOnPos();
                             fixSize();
                             return 1;
                         })
@@ -92,12 +91,12 @@ public class SchemSelector {
                                             new SchemSaver(new Region(pos1, pos2)).save(name + ".schem");
                                         } catch (Throwable t) {
                                             t.printStackTrace();
-                                            ctx.getSource().sendFeedback(Text.translatable("lang.bparser.save.failed.error", t.getMessage()));
+                                            ctx.getSource().sendFeedback(Component.translatable("lang.bparser.save.failed.error", t.getMessage()));
                                             return 1;
                                         }
-                                        ctx.getSource().sendFeedback(Text.translatable("lang.bparser.save.successfully"));
+                                        ctx.getSource().sendFeedback(Component.translatable("lang.bparser.save.successfully"));
                                     } else {
-                                        ctx.getSource().sendFeedback(Text.translatable("lang.bparser.save.failed.norg"));
+                                        ctx.getSource().sendFeedback(Component.translatable("lang.bparser.save.failed.norg"));
                                     }
                                     return 1;
                                 })
@@ -112,17 +111,17 @@ public class SchemSelector {
                                         if (blocks > 0) {
                                             region.maxY += blocks;
                                             region.resize();
-                                            ctx.getSource().sendFeedback(Text.translatable("lang.bparser.expand.up", blocks));
+                                            ctx.getSource().sendFeedback(Component.translatable("lang.bparser.expand.up", blocks));
                                         } else {
                                             region.minY -= blocks;
                                             region.resize();
-                                            ctx.getSource().sendFeedback(Text.translatable("lang.bparser.expand.down", blocks));
+                                            ctx.getSource().sendFeedback(Component.translatable("lang.bparser.expand.down", blocks));
                                         }
                                         pos1 = new BlockPos(region.minX, region.minY, region.minZ);
                                         pos2 = new BlockPos(region.maxX, region.maxY, region.maxZ);
                                         fixSize();
                                     } else {
-                                        ctx.getSource().sendFeedback(Text.translatable("lang.bparser.save.failed.norg"));
+                                        ctx.getSource().sendFeedback(Component.translatable("lang.bparser.save.failed.norg"));
                                     }
                                     return 1;
                                 })
@@ -133,10 +132,10 @@ public class SchemSelector {
                                 .executes(ctx -> {
                                     int blocks = IntegerArgumentType.getInteger(ctx, "blocks");
                                     if (pos1 != null && pos2 != null) {
-                                        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+                                        LocalPlayer player = Minecraft.getInstance().player;
                                         if (player != null) {
                                             Region region = new Region(pos1, pos2);
-                                            Vec3d lookDirection = player.getRotationVec(1.0f).normalize();
+                                            Vec3 lookDirection = player.getLookAngle().normalize();
                                             if (Math.abs(lookDirection.y) > Math.abs(lookDirection.x) && Math.abs(lookDirection.y) > Math.abs(lookDirection.z)) {
                                                 if (lookDirection.y < 0) {
                                                     region.minY -= blocks;
@@ -156,14 +155,14 @@ public class SchemSelector {
                                                     region.minZ -= blocks;
                                                 }
                                             }
-                                            ctx.getSource().sendFeedback(Text.translatable("lang.bparser.expand.forward", blocks));
+                                            ctx.getSource().sendFeedback(Component.translatable("lang.bparser.expand.forward", blocks));
                                             region.resize();
                                             pos1 = new BlockPos(region.minX, region.minY, region.minZ);
                                             pos2 = new BlockPos(region.maxX, region.maxY, region.maxZ);
                                             fixSize();
                                         }
                                     } else {
-                                        ctx.getSource().sendFeedback(Text.translatable("lang.bparser.save.failed.norg"));
+                                        ctx.getSource().sendFeedback(Component.translatable("lang.bparser.save.failed.norg"));
                                     }
                                     return 1;
                                 })
@@ -175,7 +174,7 @@ public class SchemSelector {
     private void onRenderWorld(WorldRenderContext context) {
         if (!enabled) return;
         if (pos1 != null && pos2 != null) {
-            Vec3d cameraPos = context.camera().getPos();
+            Vec3 cameraPos = context.camera().getPosition();
             Region region = new Region(pos1, pos2);
 
             double minX = region.minX;
@@ -187,18 +186,18 @@ public class SchemSelector {
 
 
             {
-                Box box = new Box(minX, minY, minZ, maxX, maxY, maxZ);
-                Box shiftedBox = box.offset(-cameraPos.x, -cameraPos.y, -cameraPos.z);
+                AABB box = new AABB(minX, minY, minZ, maxX, maxY, maxZ);
+                AABB shiftedBox = box.move(-cameraPos.x, -cameraPos.y, -cameraPos.z);
                 RenderUtil.drawBox(context, shiftedBox, 1f, 0, 0, 1, 3.f);
             }
             {
-                Box box = new Box(pos1.getX() + 0.3, pos1.getY() + 0.3, pos1.getZ() + 0.3, pos1.getX() + 0.7, pos1.getY() + 0.7, pos1.getZ() + 0.7);
-                Box shiftedBox = box.offset(-cameraPos.x, -cameraPos.y, -cameraPos.z);
+                AABB box = new AABB(pos1.getX() + 0.3, pos1.getY() + 0.3, pos1.getZ() + 0.3, pos1.getX() + 0.7, pos1.getY() + 0.7, pos1.getZ() + 0.7);
+                AABB shiftedBox = box.move(-cameraPos.x, -cameraPos.y, -cameraPos.z);
                 RenderUtil.drawBox(context, shiftedBox, 0f, 1, 0, 1);
             }
             {
-                Box box = new Box(pos2.getX() + 0.3, pos2.getY() + 0.3, pos2.getZ() + 0.3, pos2.getX() + 0.7, pos2.getY() + 0.7, pos2.getZ() + 0.7);
-                Box shiftedBox = box.offset(-cameraPos.x, -cameraPos.y, -cameraPos.z);
+                AABB box = new AABB(pos2.getX() + 0.3, pos2.getY() + 0.3, pos2.getZ() + 0.3, pos2.getX() + 0.7, pos2.getY() + 0.7, pos2.getZ() + 0.7);
+                AABB shiftedBox = box.move(-cameraPos.x, -cameraPos.y, -cameraPos.z);
                 RenderUtil.drawBox(context, shiftedBox, 0f, 1, 0, 1);
             }
         }

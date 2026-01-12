@@ -1,36 +1,39 @@
 package org.by1337.bparser.util;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.*;
-import net.minecraft.util.Formatting;
+
+
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.*;
 
 import java.util.function.UnaryOperator;
 
 public class ChatUtil {
 
-    public static MutableText addCopyButton(MutableText text, String msg, String data) {
-        return addCopyButton(text, msg, data, Formatting.GREEN);
+    public static MutableComponent addCopyButton(MutableComponent text, String msg, String data) {
+
+        return addCopyButton(text, msg, data, ChatFormatting.GREEN);
     }
 
-    public static MutableText addCopyButton(MutableText text, String msg, String data, Formatting color) {
-        return text.append(Text.literal(msg).styled(copyText(data, color)));
+    public static MutableComponent addCopyButton(MutableComponent text, String msg, String data, ChatFormatting color) {
+        return text.append(Component.literal(msg).withStyle(copyText(data, color)));
     }
 
-    public static MutableText addCopyButton(MutableText text, String data) {
+    public static MutableComponent addCopyButton(MutableComponent text, String data) {
         return addCopyButton(text, " [copy]", data);
     }
 
     public static UnaryOperator<Style> copyText(String text) {
-        return copyText(text, Formatting.GREEN);
+        return copyText(text, ChatFormatting.GREEN);
     }
 
-    public static UnaryOperator<Style> copyText(String text, Formatting color) {
-        return s -> s.withClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, text))
-                .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("copy")))
+    public static UnaryOperator<Style> copyText(String text, ChatFormatting color) {
+        return s -> s.withClickEvent(new ClickEvent.CopyToClipboard(text))
+                .withHoverEvent(new HoverEvent.ShowText(Component.literal("copy")))
                 .withColor(color);
     }
 
-    public static void show(Text text) {
-        MinecraftClient.getInstance().inGameHud.getChatHud().addMessage(text);
+    public static void show(Component text) {
+        Minecraft.getInstance().gui.getChat().addMessage(text);
     }
 }

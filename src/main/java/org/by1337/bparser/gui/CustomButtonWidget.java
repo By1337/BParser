@@ -1,23 +1,30 @@
 package org.by1337.bparser.gui;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.gui.components.AbstractButton;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.network.chat.Component;
 
-public class CustomButtonWidget extends ButtonWidget {
+public class CustomButtonWidget extends AbstractButton {
 
-    public static final Identifier WIDGETS_TEXTURE = new Identifier("textures/gui/toasts.png");
+    private final Runnable runnable;
 
-    public CustomButtonWidget(int x, int y, int width, int height, Text message, PressAction onPress) {
-        super(x, y, width, height, message, onPress, (m) -> Text.literal("okak"));
+    public CustomButtonWidget(int x, int y, int width, int height, Component component, Runnable runnable) {
+        super(x, y, width, height, component);
+        this.runnable = runnable;
     }
 
+
+    @Override
+    public void onPress() {
+        runnable.run();
+    }
+
+    @Override
+    protected void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {
+
+    }
+
+/*
   //  @Override
     protected void renderWidget0(DrawContext context, int mouseX, int mouseY, float delta) {
         MinecraftClient client = MinecraftClient.getInstance();
@@ -38,5 +45,10 @@ public class CustomButtonWidget extends ButtonWidget {
         context.drawText(client.textRenderer, getMessage(), this.getX() + this.width / 2, this.getY() + (this.height - 8) / 2, color | alphaBits, false);
 
     }
+
+    @Override
+    protected void renderWidget(GuiGraphics context, int mouseX, int mouseY, float delta) {
+
+    }*/
 
 }

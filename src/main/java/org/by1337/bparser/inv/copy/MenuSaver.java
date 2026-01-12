@@ -1,30 +1,37 @@
 package org.by1337.bparser.inv.copy;
 
 import com.google.common.base.Joiner;
-import net.fabricmc.fabric.api.util.NbtType;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.registry.Registries;
-import net.minecraft.text.Text;
-import net.minecraft.util.Util;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import net.minecraft.Util;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.Container;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantment;
 import org.by1337.bparser.inv.ScreenUtil;
-import org.by1337.bparser.text.RawMessageConvertor;
+import org.by1337.bparser.text.ComponentUtil;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class MenuSaver {
-    private final HandledScreen<?> screen;
-    private final Inventory inventory;
+    private final AbstractContainerScreen<?> screen;
+    private final Container inventory;
     private final Map<String, InvItem> items = new HashMap<>();
     private final List<Map<Integer, String>> frames = new ArrayList<>();
     private final AlphabetNameGenerator alphabetNameGenerator = new AlphabetNameGenerator();
     private final UUID randomUUID = UUID.randomUUID();
 
-    public MenuSaver(HandledScreen<?> screen, List<ScreenData> frames, Inventory inventory) {
+    public MenuSaver(AbstractContainerScreen<?> screen, List<ScreenData> frames, Container inventory) {
         this.screen = screen;
         this.inventory = inventory;
 
@@ -74,17 +81,17 @@ public class MenuSaver {
 
     public String saveNoAnimation(boolean setSlots) {
         StringBuilder sb = new StringBuilder();
-        sb.append(Text.translatable("config.bparser.copyright").getString());
+        sb.append(Component.translatable("config.bparser.copyright").getString());
 
-        sb.append("\nid: auto_gen:").append(randomUUID).append("\n");
+        sb.append("\nid: bparser:").append(randomUUID).append("\n");
         sb.append("provider: default\n");
 
         sb.append("type: ").append(ScreenUtil.getBukkitType(screen)).append("\n");
-        sb.append("size: ").append(inventory.size()).append("\n");
+        sb.append("size: ").append(inventory.getContainerSize()).append("\n");
 
 
         sb.append("title: ")
-                .append(quoteAndEscape(fromRaw(Text.Serialization.toJsonString(screen.getTitle())))).append("\n");
+                .append(quoteAndEscape(ComponentUtil.convert(screen.getTitle()))).append("\n");
 
         sb.append("items:\n");
         for (String id : items.keySet()) {
@@ -93,110 +100,176 @@ public class MenuSaver {
                 continue;
             }
             sb.append("  ").append(id).append(":\n");
-            boolean isBaseHead = false;
-            NbtCompound tag = item.itemStack.getNbt();
             if (setSlots && !item.slots.isEmpty()) {
                 if (item.slots.size() == 1) {
-                    sb.append("    slot: ").append(item.slots.get(0)).append("\n");
+                    sb.append("\tslot: ").append(item.slots.get(0)).append("\n");
                 } else {
-                    sb.append("    slot: ").append(Joiner.on(",").join(item.slots)).append("\n");
+                    sb.append("\tslot: ").append(Joiner.on(",").join(item.slots)).append("\n");
                 }
             }
-            if (tag != null) {
-                if (tag.contains("display")) {
-                    if (tag.contains("display")) {
-                        NbtCompound display = tag.getCompound("display");
-                        if (display.contains("Name")) {
-                            String s = display.getString("Name");
-                            sb.append("#    name: ").append(quoteAndEscape(fromRaw(s, true))).append("\n");
-                            sb.append("    name: ").append(quoteAndEscape(fromRaw(s))).append("\n");
-                        }
-                        if (display.contains("Lore")) {
-                            sb.append("    lore:\n");
-                            NbtList lore = display.getList("Lore", NbtType.STRING);
-                            for (NbtElement nbtElement : lore) {
-                                sb.append("      - ").append(quoteAndEscape(fromRaw(nbtElement.asString()))).append("\n");
-                            }
-                        }
-                        if (display.contains("color")) {
-                            int rgb = display.getInt("color");
-                            int BIT_MASK = 0xff;
-                            sb.append("    color: '#").append(String.format(
-                                    "%02X%02X%02X",
-                                    rgb >> 16 & BIT_MASK,
-                                    rgb >> 8 & BIT_MASK,
-                                    rgb >> 0 & BIT_MASK
-                            )).append("'\n");
-                        }
+            ItemStack itemStack = item.itemStack;
+            of(itemStack, DataComponents.MAX_STACK_SIZE, i -> {
+                if (itemStack.getItem().getDefaultMaxStackSize() == i) return;
+                sb.append("\tmax_stack_size: ").append(i).append("\n");
+            });
+            of(itemStack, DataComponents.DAMAGE, i -> {
+                sb.append("\tdamage: ").append(i).append("\n");
+            });
+            of(itemStack, DataComponents.UNBREAKABLE, i -> {
+                sb.append("\tunbreakable: true");
+            });
+            any(itemStack, DataComponents.CUSTOM_NAME, DataComponents.ITEM_NAME, c -> {
+                sb.append("   #name: ").append(quoteAndEscape(ComponentUtil.convert(c, true))).append("\n");
+                sb.append("\tname: ").append(quoteAndEscape(ComponentUtil.convert(c))).append("\n");
+            });
+            of(itemStack, DataComponents.LORE, lore -> {
+                sb.append("\tlore:");
+                toList("\t  ", lore.lines(), sb, ComponentUtil::convert);
+            });
+            of(itemStack, DataComponents.CUSTOM_MODEL_DATA, model -> {
+                sb.append("\tmodel_data:\n");
+                sb.append("\t  floats:");
+                toList("\t\t", model.floats(), sb, b -> b);
+                sb.append("\t  flags:");
+                toList("\t\t", model.flags(), sb, b -> b);
+                sb.append("\t  colors:");
+                toList("\t\t", model.colors(), sb, MenuSaver::toHexEscaped);
+                sb.append("\t  strings:");
+                toList("\t\t", model.strings(), sb, MenuSaver::quoteAndEscape);
+            });
+            AtomicBoolean hasColor = new AtomicBoolean();
+            of(itemStack, DataComponents.DYED_COLOR, color -> {
+                hasColor.set(true);
+                sb.append("\tcolor: ").append(toHexEscaped(color.rgb()));
+            });
+            of(itemStack, DataComponents.MAP_COLOR, color -> {
+                if (hasColor.get()) sb.append("\t#map_color ");
+                sb.append("\tcolor: ").append(toHexEscaped(color.rgb()));
+            });
+            // это ARGB хз куда его
+            // of(itemStack, DataComponents.BASE_COLOR, color -> {
+            //     if (hasColor.get()) sb.append("\t#base_color ");
+            //     sb.append("\tcolor: ").append(toHexEscaped(color.()));
+            // });
+            of(itemStack, DataComponents.POTION_CONTENTS, content -> {
+                var c = content.customColor();
+                if (c.isPresent()) {
+                    if (hasColor.get()) sb.append("\t#potion-customColor ");
+                    //todo это тоже ARGB
+                    sb.append("\tcolor: ").append(toHexEscaped(c.get()));
+                }
+                //potion_effects:
+                //  glowing: 10 10
+                //  slow_falling: <duration> <amplifier>
+                //color: '#rrggbb' # для зелий и кожаной брони
+                var effects = content.customEffects();
+                if (!effects.isEmpty()) {
+                    sb.append("\tpotion_effects:\n");
+                    for (MobEffectInstance effect : effects) {
+                        var ef = BuiltInRegistries.MOB_EFFECT.getKey(effect.getEffect().value()).getPath();
+                        sb.append("\t  ").append(ef).append(": ").append(effect.getDuration()).append(" ").append(effect.getAmplifier()).append("\n");
                     }
                 }
-                if (tag.contains("CustomPotionColor")) {
-                    int rgb = tag.getInt("CustomPotionColor");
-                    int BIT_MASK = 0xff;
-                    sb.append("    color: '#").append(String.format(
-                            "%02X%02X%02X",
-                            rgb >> 16 & BIT_MASK,
-                            rgb >> 8 & BIT_MASK,
-                            rgb >> 0 & BIT_MASK
-                    )).append("'\n");
-                }
-                if (tag.contains("Enchantments")) {
-                    NbtList enchantments = tag.getList("Enchantments", NbtType.COMPOUND);
-                    sb.append("    enchantments:\n");
-
-                    for (NbtElement obj : enchantments) {
-                        NbtCompound enchantment = (NbtCompound) obj;
-                        sb.append("      ").append(enchantment.getString("id").split(":")[1]).append(": ").append(enchantment.getInt("lvl")).append("\n");
+            });
+            of(itemStack, DataComponents.ENCHANTMENTS, enchantments -> {
+                if (enchantments.isEmpty()) return;
+                //enchantments:
+                //  protection: 1
+                int idx = sb.length();
+                sb.append("\tenchantments:\n");
+                int size = 0;
+                for (Object2IntMap.Entry<Holder<Enchantment>> entry : enchantments.entrySet()) {
+                    var key = entry.getKey().unwrapKey();
+                    if (key.isPresent()) {
+                        sb.append("\t  ").append(key.get().location().getPath()).append(": ").append(entry.getIntValue()).append("\n");
+                        size++;
                     }
                 }
-                if (tag.contains("HideFlags")) {
-                    int flags = tag.getInt("HideFlags");
-                    sb.append("    item_flags:");
-
-                    boolean has = false;
-
-                    for (ItemFlag value : ItemFlag.values()) {
-                        byte bitModifier = ((byte) (1 << value.ordinal()));
-                        if ((flags & bitModifier) == bitModifier) {
-                            if (!has) {
-                                sb.append("\n");
-                                has = true;
-                            }
-                            sb.append("      - ").append(value.name().toLowerCase()).append("\n");
-                        }
-                    }
-                    if (!has) {
-                        sb.append(" [ ]");
-                    }
+                if (size == 0) {
+                    sb.setLength(idx);
                 }
-                if (tag.contains("SkullOwner")) {
-                    NbtCompound skullOwner = tag.getCompound("SkullOwner");
-                    if (skullOwner.contains("Properties")) {
-                        NbtCompound properties = skullOwner.getCompound("Properties");
-                        if (properties.contains("textures")) {
-                            NbtList lore = properties.getList("textures", NbtType.COMPOUND);
-                            if (!lore.isEmpty()) {
-                                NbtCompound val = (NbtCompound) lore.get(0);
-                                sb.append("    ").append("material: ").append(quoteAndEscape("basehead-" + val.getString("Value"))).append("\n");
-                                isBaseHead = true;
-                            }
-                        }
-                    }
+            });
+            of(itemStack, DataComponents.TOOLTIP_DISPLAY, tooltip -> {
+                if (tooltip.hideTooltip()) {
+                    sb.append("\thide_tooltip: true\n");
                 }
-            }
+                for (DataComponentType<?> component : tooltip.hiddenComponents()) {
+                    var v = BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(component).getPath();
+                    sb.append("\t#hide -> ").append(v);
+                }
+            });
+            AtomicBoolean hasMaterial = new AtomicBoolean();
+            of(itemStack, DataComponents.PROFILE, profile -> {
+                if (profile.properties().containsKey("textures")) {
+                    var data = profile.properties().get("textures").iterator().next();
+                    sb.append("\tmaterial: ").append(quoteAndEscape("basehead-" + data.value())).append("\n");
+                    hasMaterial.set(true);
+                }
+            });
             if (item.itemStack.getCount() != 1) {
-                sb.append("    ").append("amount: ").append(item.itemStack.getCount()).append("\n");
+                sb.append("\tamount: ").append(item.itemStack.getCount()).append("\n");
             }
-            if (!isBaseHead) {
-                String material = Registries.ITEM.getKey(item.itemStack.getItem()).get().getValue().getPath();
-                sb.append("    ").append("material: ").append(material).append("\n");
-            }
-            if (item.itemStack.getDamage() != 0) {
-                sb.append("    ").append("damage: ").append(item.itemStack.getDamage()).append("\n");
+            if (!hasMaterial.get()) {
+                String material = BuiltInRegistries.ITEM.getKey(item.itemStack.getItem()).getPath();
+                sb.append("\tmaterial: ").append(material).append("\n");
             }
         }
         sb.append("\n");
         return sb.toString();
+    }
+
+    private static <T> void toList(String space, Iterable<T> t, StringBuilder sb, Function<T, Object> serializer) {
+        var iterator = t.iterator();
+        int size = 0;
+        while (iterator.hasNext()) {
+            T val = iterator.next();
+            size++;
+            if (size == 1) {
+                if (!iterator.hasNext()) {
+                    sb.append(" ").append(serializer.apply(val)).append("\n");
+                    break;
+                } else {
+                    sb.append("\n");
+                }
+            }
+            sb.append(space).append("- ").append(serializer.apply(val)).append("\n");
+        }
+        if (size == 0) {
+            sb.append(" []\n");
+        }
+    }
+
+    private static <T> void of(ItemStack itemStack, DataComponentType<T> type, Consumer<T> applier) {
+        T t = itemStack.get(type);
+        if (t != null) {
+            applier.accept(t);
+        }
+    }
+
+    private static <T> void any(ItemStack itemStack, DataComponentType<T> t, DataComponentType<T> t1, Consumer<T> applier) {
+        T v = itemStack.get(t);
+        if (v != null) {
+            applier.accept(v);
+        } else {
+            v = itemStack.get(t1);
+            if (v != null) {
+                applier.accept(v);
+            }
+        }
+    }
+
+    private static String toHexEscaped(int rgb) {
+        return "\"" + toHexEscaped(rgb) + "\"";
+    }
+
+    private static String toHex(int rgb) {
+        int BIT_MASK = 0xff;
+        return String.format(
+                "#%02X%02X%02X",
+                rgb >> 16 & BIT_MASK,
+                rgb >> 8 & BIT_MASK,
+                rgb >> 0 & BIT_MASK
+        );
     }
 
     public String save() {
@@ -259,15 +332,6 @@ public class MenuSaver {
         HIDE_POTION_EFFECTS,
         HIDE_DYE;
     }
-
-    public static String fromRaw(String json) {
-        return RawMessageConvertor.convert(json);
-    }
-
-    public static String fromRaw(String json, boolean noColors) {
-        return RawMessageConvertor.convert(json, noColors);
-    }
-
 
     public static String quoteAndEscape(String raw) {
         StringBuilder result = new StringBuilder(" ");
@@ -369,8 +433,8 @@ public class MenuSaver {
         private long currentPosition = 0;
 
         public String nextName(@Nullable InvItem item, @Nullable Map<String, InvItem> map) {
-            if (item != null && map != null && item.fullNBT.contains("tag", NbtType.COMPOUND)) {
-                String name = extractName(item.fullNBT.getCompound("tag"));
+            if (item != null && map != null && item.extra != null) {
+                String name = extractName(item.extra);
                 if (name != null) {
                     String s = name;
                     while (map.containsKey(name)) {
@@ -405,20 +469,22 @@ public class MenuSaver {
             return list;
         });
 
-        private @Nullable String extractName(NbtCompound fullNBT) {
+        private @Nullable String extractName(CompoundTag fullNBT) {
             for (NbtPath path : COMPOUNDS) {
-                NbtCompound compound;
+                CompoundTag compound;
                 if (path.compound.equals("@")) {
                     compound = fullNBT;
-                } else if (fullNBT.contains(path.compound, NbtType.COMPOUND)) {
-                    compound = fullNBT.getCompound(path.compound);
                 } else {
-                    compound = null;
+                    var opt = fullNBT.getCompound(path.compound);
+                    if (opt.isPresent()) {
+                        compound = opt.get();
+                    } else {
+                        continue;
+                    }
                 }
-                if (compound != null) {
-                    if (compound.contains(path.value, NbtType.STRING))
-                        return path.prefix + compound.getString(path.value);
-                }
+                var opt = compound.getString(path.value);
+                if (opt.isPresent())
+                    return path.prefix + opt.get();
             }
             return null;
         }

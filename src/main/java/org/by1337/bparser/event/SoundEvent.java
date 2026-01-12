@@ -1,19 +1,20 @@
 package org.by1337.bparser.event;
 
-import net.minecraft.registry.entry.RegistryEntry;
+
+import net.minecraft.core.Holder;
 
 public class SoundEvent {
-    private RegistryEntry<net.minecraft.sound.SoundEvent> sound;
+    private Holder<net.minecraft.sounds.SoundEvent> sound;
     private float volume;
     private float pitch;
 
-    public SoundEvent(RegistryEntry<net.minecraft.sound.SoundEvent> sound, float volume, float pitch) {
+    public SoundEvent(Holder<net.minecraft.sounds.SoundEvent> sound, float volume, float pitch) {
         this.sound = sound;
         this.volume = volume;
         this.pitch = pitch;
     }
 
-    public RegistryEntry<net.minecraft.sound.SoundEvent> getSound() {
+    public Holder<net.minecraft.sounds.SoundEvent> getSound() {
         return sound;
     }
 
@@ -28,7 +29,7 @@ public class SoundEvent {
     @Override
     public String toString() {
         return "SoundEvent{" +
-                "sound=" + sound.getKey().orElse(null) +
+                "sound=" + sound +
                 ", volume=" + volume +
                 ", pitch=" + pitch +
                 '}';

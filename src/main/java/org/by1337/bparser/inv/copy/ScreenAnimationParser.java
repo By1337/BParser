@@ -1,26 +1,26 @@
 package org.by1337.bparser.inv.copy;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.inventory.Inventory;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.world.Container;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public class ScreenAnimationParser {
-    private final Inventory inventory;
+    private final Container inventory;
     private final Screen screen;
     private volatile boolean stop;
     private final FrameCreator frameCreator = new FrameCreator();
 
-    public ScreenAnimationParser(Inventory inventory, Screen screen) {
+    public ScreenAnimationParser(Container inventory, Screen screen) {
         this.screen = screen;
         this.inventory = inventory;
         frameCreator.screenshot();
         new Thread(() -> {
             while (!stop) {
-                if (MinecraftClient.getInstance().currentScreen != this.screen) {
+                if (Minecraft.getInstance().screen != this.screen) {
                     return;
                 }
                 if (frameCreator.noDiff > 150) {

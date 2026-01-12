@@ -2,17 +2,18 @@ package org.by1337.bparser.schem;
 
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.SharedConstants;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Vec3i;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtIo;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3i;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -25,7 +26,7 @@ import java.util.Objects;
 public class SchemSaver {
     private final SchemSelector.Region region;
     private final Path schemFolder = FabricLoader.getInstance().getGameDir().resolve("mods/schems");
-    private final MinecraftClient mc = MinecraftClient.getInstance();
+    private final Minecraft mc = Minecraft.getInstance();
     private static final int MAX_SIZE = Short.MAX_VALUE - Short.MIN_VALUE;
 
     public SchemSaver(SchemSelector.Region region) {
@@ -33,8 +34,8 @@ public class SchemSaver {
     }
 
     public void save(String name) {
-        PlayerEntity player = Objects.requireNonNull(mc.player);
-        var pos = player.getBlockPos();
+        LocalPlayer player = Objects.requireNonNull(mc.player);
+        var pos = player.getOnPos();
         Vec3i origin = new Vec3i(pos.getX(), pos.getY(), pos.getZ());
         Vec3i min = new Vec3i(region.minX, region.minY, region.minZ);
         Vec3i offset = new BlockPos(min.getX() - origin.getX(), min.getY() - origin.getY(), min.getZ() - origin.getZ());
@@ -53,8 +54,8 @@ public class SchemSaver {
             throw new IllegalArgumentException("Length of region too large for a .schematic");
         }
 
-        NbtCompound compound = new NbtCompound();
-        compound.putInt("DataVersion", SharedConstants.getGameVersion().getSaveVersion().getId());
+        CompoundTag compound = new CompoundTag();
+        compound.putInt("DataVersion", SharedConstants.getCurrentVersion().dataVersion().version());
         compound.putInt("Version", 2);
 
         compound.putIntArray("Offset", new int[]{min.getX(), min.getY(), min.getZ()});
@@ -64,7 +65,7 @@ public class SchemSaver {
         compound.putShort("Length", (short) length);
 
 
-        NbtCompound metadata = new NbtCompound();
+        CompoundTag metadata = new CompoundTag();
         metadata.putString("CreatedByMod", "BParser");
         metadata.putString("ModAuthor", "By1337");
         metadata.putString("Name", name);
@@ -75,7 +76,7 @@ public class SchemSaver {
         compound.put("Metadata", metadata);
 
 
-        NbtList tileEntities = new NbtList();
+        ListTag tileEntities = new ListTag();
 
         int paletteMax = 0;
         ByteArrayOutputStream buffer = new ByteArrayOutputStream(width * height * length);
@@ -88,18 +89,18 @@ public class SchemSaver {
                 for (int x = 0; x < width; x++) {
                     int x0 = min.getX() + x;
                     BlockPos point = new BlockPos(x0, y0, z0);
-                    BlockState state = mc.world.getBlockState(point);
+                    BlockState state = mc.level.getBlockState(point);
 
-                    BlockEntity blockEntity = mc.world.getBlockEntity(point);
+                    BlockEntity blockEntity = mc.level.getBlockEntity(point);
                     if (blockEntity != null) {
-                        NbtCompound data =blockEntity.createNbt();
+                        CompoundTag data = blockEntity.saveWithFullMetadata(mc.level.registryAccess());
                         data.remove("id"); // Remove 'id' if it exists. We want 'Id'
                         // Positions are kept in NBT, we don't want that.
                         data.remove("x");
                         data.remove("y");
                         data.remove("z");
 
-                        Identifier identifier = BlockEntityType.getId(blockEntity.getType());
+                        ResourceLocation identifier = BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(blockEntity.getType());
                         data.putString("Id", identifier.toString());
                         data.putIntArray("Pos", new int[]{x, y, z});
                         tileEntities.add(data);
@@ -124,7 +125,7 @@ public class SchemSaver {
             }
         }
         compound.putInt("PaletteMax", paletteMax);
-        NbtCompound paletteTag = new NbtCompound();
+        CompoundTag paletteTag = new CompoundTag();
         palette.forEach(paletteTag::putInt);
         compound.put("Palette", paletteTag);
         compound.putByteArray("BlockData", buffer.toByteArray());

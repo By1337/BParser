@@ -1,34 +1,34 @@
 {
-	"schemaVersion": 1,
-	"id": "bparser",
-	"version": "${version}",
-	"name": "BParser",
-	"description": "Mod for copying anything from servers",
-	"authors": [
-		"By1337"
-	],
-	"contact": {
-		"homepage": "https://discord.gg/bdev",
-		"sources": "https://github.com/By1337/BParser"
-	},
-	"license": "MIT",
-	"icon": "assets/bparser/icon.png",
-	"environment": "client",
-	"entrypoints": {
-		"client": [
-          "org.by1337.bparser.BParser"
-		]
-	},
-	"mixins": [
-		"bparser.mixins.json"
-	],
-	"depends": {
-		"fabricloader": ">=0.17.2",
-		"minecraft": "~1.20.4",
-		"java": ">=17",
-		"fabric": "*"
-	},
-	"suggests": {
-		"another-mod": "*"
-	}
+  "schemaVersion": 1,
+  "id": "bparser",
+  "version": "${version}",
+  "name": "BParser",
+  "description": "Mod for copying anything from servers",
+  "authors": [
+    "By1337"
+  ],
+  "contact": {
+    "homepage": "https://discord.gg/bdev",
+    "sources": "https://github.com/By1337/BParser"
+  },
+  "license": "MIT",
+  "icon": "assets/bparser/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "org.by1337.bparser.BParser"
+    ]
+  },
+  "mixins": [
+    "bparser.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.18.4",
+    "minecraft": "~1.21.8",
+    "java": ">=21",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "another-mod": "*"
+  }
 }
