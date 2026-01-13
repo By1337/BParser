@@ -6,10 +6,13 @@ import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.client.screen.v1.Screens;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentContents;
 import net.minecraft.world.Container;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import org.by1337.bparser.cfg.Config;
 import org.by1337.bparser.gui.CustomButtonWidget;
 import org.by1337.bparser.inv.ScreenUtil;
@@ -17,6 +20,7 @@ import org.by1337.bparser.inv.copy.MenuSaver;
 import org.by1337.bparser.inv.copy.ScreenAnimationParser;
 import org.by1337.bparser.text.ComponentUtil;
 import org.by1337.bparser.text.StringUtil;
+import org.by1337.bparser.toast.CustomToast;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -38,12 +42,12 @@ public class ScreenListener {
                             new CustomButtonWidget(
                                     (width / 2) - (buttonWidth / 2) + 58 - 3, (height / 2) - (buttonHeight / 2) - (103 + buttonHeight), buttonWidth, buttonHeight, Component.literal("save anim"), () -> {
                                 if (!parser.isStop()) {
-                                    //  CustomToast customToast = new CustomToast(
-                                    //          Component.translatable("lang.bparser.menu.wait2"),
-                                    //          Component.translatable("lang.bparser.menu.wait"),
-                                    //          new ItemStack(Items.BARRIER)
-                                    //  );
-                                    //  MinecraftClient.getInstance().getToastManager().add(customToast);
+                                      CustomToast customToast = new CustomToast(
+                                              Component.translatable("lang.bparser.menu.wait2"),
+                                              Component.translatable("lang.bparser.menu.wait"),
+                                              new ItemStack(Items.BARRIER)
+                                      );
+                                      Minecraft.getInstance().getToastManager().addToast(customToast);
                                 } else {
                                     MenuSaver menuSaver = new MenuSaver(handledScreen, parser.getFrameCreator().frames, inventory);
                                     saveToFile(menuSaver.save(), generateSaveName(menuSaver, handledScreen));
@@ -110,12 +114,12 @@ public class ScreenListener {
         try {
             Files.write(folder.resolve(fileName), data.getBytes(StandardCharsets.UTF_8));
 
-            // CustomToast customToast = new CustomToast(
-            //         Component.translatable("lang.bparser.menu.saved.path", fileName),
-            //         Component.translatable("lang.bparser.menu.saved"),
-            //         new ItemStack(Items.LIME_DYE)
-            // );
-            // MinecraftClient.getInstance().getToastManager().add(customToast);
+             CustomToast customToast = new CustomToast(
+                     Component.translatable("lang.bparser.menu.saved.path", fileName),
+                     Component.translatable("lang.bparser.menu.saved"),
+                     new ItemStack(Items.LIME_DYE)
+             );
+            Minecraft.getInstance().getToastManager().addToast(customToast);
 
         } catch (IOException e) {
             throw new RuntimeException(e);

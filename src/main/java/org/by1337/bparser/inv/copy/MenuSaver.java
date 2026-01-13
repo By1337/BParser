@@ -195,7 +195,7 @@ public class MenuSaver {
                 }
                 for (DataComponentType<?> component : tooltip.hiddenComponents()) {
                     var v = BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(component).getPath();
-                    sb.append("\t#hide -> ").append(v);
+                    sb.append("\t#hide -> ").append(v).append("\n");
                 }
             });
             AtomicBoolean hasMaterial = new AtomicBoolean();
@@ -259,7 +259,7 @@ public class MenuSaver {
     }
 
     private static String toHexEscaped(int rgb) {
-        return "\"" + toHexEscaped(rgb) + "\"";
+        return "\"" + toHex(rgb) + "\"";
     }
 
     private static String toHex(int rgb) {
