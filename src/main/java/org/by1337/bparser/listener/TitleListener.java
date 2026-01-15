@@ -31,7 +31,7 @@ public class TitleListener {
         );
 
         NetworkEvent.TITLE.register(packet -> {
-            if (!Config.INSTANCE.titleLog || !Thread.currentThread().getName().contains("Netty Client IO"))
+            if (!Config.INSTANCE.titleLog || !MinecraftClient.getInstance().isOnThread())
                 return;
             LiteralText text = new LiteralText(
                     "[TITLE: " + Actions.values[packet.getAction().ordinal()] + "]"

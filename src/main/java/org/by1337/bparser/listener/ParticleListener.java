@@ -34,7 +34,7 @@ public class ParticleListener {
         );
 
         NetworkEvent.PARTICLE.register(packet -> {
-            if (!Config.INSTANCE.particleLog || !Thread.currentThread().getName().contains("Netty Client IO")) return;
+            if (!Config.INSTANCE.particleLog || !MinecraftClient.getInstance().isOnThread()) return;
             LiteralText text = new LiteralText("[particle]: ");
             String type = Registry.PARTICLE_TYPE.getId(packet.getParameters().getType()).toString();
 
