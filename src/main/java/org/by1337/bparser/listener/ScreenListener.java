@@ -84,25 +84,22 @@ public class ScreenListener {
     private String generateSaveName(MenuSaver menuSaver, AbstractContainerScreen<?> screen) {
         Path menuFolder = FabricLoader.getInstance().getGameDir().resolve("mods/menus");
 
-        if (screen.getTitle().getContents() instanceof ComponentContents) {
-            String title = ComponentUtil.convert(screen.getTitle(), true);
-            String s = StringUtil.removeIf(
-                    title,
-                    c ->
-                            (!(c >= 'a' && c <= 'z') && !(c >= 'A' && c <= 'Z')) &&
-                                    (!(c >= 'а' && c <= 'я') && !(c >= 'А' && c <= 'Я')) &&
-                                    (!(c >= '0' && c <= '9')) &&
-                                    c != ' '
-            ).trim();
+        screen.getTitle().getContents();
+        String title = ComponentUtil.convert(screen.getTitle(), true);
+        String s = sanitizeFilename(title);
 
-            String resultPath = s.replace(" ", "-");
-            int x = 0;
-            while (menuFolder.resolve(resultPath + ".yml").toFile().exists()) {
-                resultPath = s + "(" + ++x + ")";
-            }
-            return resultPath + ".yml";
+        String resultPath = s.replace(" ", "-");
+        int x = 0;
+        while (menuFolder.resolve(resultPath + ".yml").toFile().exists()) {
+            resultPath = s + "(" + ++x + ")";
         }
-        return menuSaver.getRandomUUID() + ".yml";
+        return resultPath + ".yml";
+    }
+    public static String sanitizeFilename(String input) {
+        return input.replaceAll(
+                "[\\\\/:*?\"<>|\\x00-\\x1F]",
+                ""
+        );
     }
 
     private void saveToFile(String data, String fileName) {

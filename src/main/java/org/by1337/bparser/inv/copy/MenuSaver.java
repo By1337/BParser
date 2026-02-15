@@ -86,7 +86,7 @@ public class MenuSaver {
         sb.append("\nid: bparser:").append(randomUUID).append("\n");
         sb.append("provider: default\n");
 
-        sb.append("type: ").append(ScreenUtil.getBukkitType(screen)).append("\n");
+        sb.append("type: ").append(ScreenUtil.getBukkitType(screen).name().toLowerCase()).append("\n");
         sb.append("size: ").append(inventory.getContainerSize()).append("\n");
 
 
@@ -100,6 +100,7 @@ public class MenuSaver {
                 continue;
             }
             sb.append("  ").append(id).append(":\n");
+            //sb.append("\s\s\s#").append(item.data).append("\n");
             if (setSlots && !item.slots.isEmpty()) {
                 if (item.slots.size() == 1) {
                     sb.append("\tslot: ").append(item.slots.get(0)).append("\n");
@@ -107,6 +108,7 @@ public class MenuSaver {
                     sb.append("\tslot: ").append(Joiner.on(",").join(item.slots)).append("\n");
                 }
             }
+
             ItemStack itemStack = item.itemStack;
             of(itemStack, DataComponents.MAX_STACK_SIZE, i -> {
                 if (itemStack.getItem().getDefaultMaxStackSize() == i) return;
@@ -124,8 +126,9 @@ public class MenuSaver {
             });
             of(itemStack, DataComponents.LORE, lore -> {
                 sb.append("\tlore:");
-                toList("\t  ", lore.lines(), sb, ComponentUtil::convert);
+                toList("\t  ", lore.lines(), sb, c -> quoteAndEscape(ComponentUtil.convert(c)));
             });
+
             of(itemStack, DataComponents.CUSTOM_MODEL_DATA, model -> {
                 sb.append("\tmodel_data:\n");
                 sb.append("\t  floats:");
@@ -133,38 +136,35 @@ public class MenuSaver {
                 sb.append("\t  flags:");
                 toList("\t\t", model.flags(), sb, b -> b);
                 sb.append("\t  colors:");
-                toList("\t\t", model.colors(), sb, MenuSaver::toHexEscaped);
+                toList("\t\t", model.colors(), sb, MenuSaver::toHexRGBEscaped);
                 sb.append("\t  strings:");
                 toList("\t\t", model.strings(), sb, MenuSaver::quoteAndEscape);
             });
             AtomicBoolean hasColor = new AtomicBoolean();
             of(itemStack, DataComponents.DYED_COLOR, color -> {
                 hasColor.set(true);
-                sb.append("\tcolor: ").append(toHexEscaped(color.rgb()));
+                sb.append("\tcolor: ").append(toHexRGBEscaped(color.rgb()));
             });
             of(itemStack, DataComponents.MAP_COLOR, color -> {
-                if (hasColor.get()) sb.append("\t#map_color ");
-                sb.append("\tcolor: ").append(toHexEscaped(color.rgb()));
+                if (hasColor.get()) sb.append("\t#map_color -");
+                sb.append("\tcolor: ").append(toHexRGBEscaped(color.rgb()));
             });
-            // это ARGB хз куда его
-            // of(itemStack, DataComponents.BASE_COLOR, color -> {
-            //     if (hasColor.get()) sb.append("\t#base_color ");
-            //     sb.append("\tcolor: ").append(toHexEscaped(color.()));
-            // });
+            of(itemStack, DataComponents.BASE_COLOR, color -> {
+                if (hasColor.get()) sb.append("\t#base_color ");
+                sb.append("\tcolor: ").append(toHexARGBEscaped(color.getTextColor()));
+            });
             of(itemStack, DataComponents.POTION_CONTENTS, content -> {
                 var c = content.customColor();
                 if (c.isPresent()) {
                     if (hasColor.get()) sb.append("\t#potion-customColor ");
-                    //todo это тоже ARGB
-                    sb.append("\tcolor: ").append(toHexEscaped(c.get()));
+                    sb.append("\tcolor: ").append(toHexARGBEscaped(c.get()));
                 }
-                //potion_effects:
+                //potion_contents:
                 //  glowing: 10 10
                 //  slow_falling: <duration> <amplifier>
-                //color: '#rrggbb' # для зелий и кожаной брони
                 var effects = content.customEffects();
                 if (!effects.isEmpty()) {
-                    sb.append("\tpotion_effects:\n");
+                    sb.append("\tpotion_contents:\n");
                     for (MobEffectInstance effect : effects) {
                         var ef = BuiltInRegistries.MOB_EFFECT.getKey(effect.getEffect().value()).getPath();
                         sb.append("\t  ").append(ef).append(": ").append(effect.getDuration()).append(" ").append(effect.getAmplifier()).append("\n");
@@ -193,10 +193,13 @@ public class MenuSaver {
                 if (tooltip.hideTooltip()) {
                     sb.append("\thide_tooltip: true\n");
                 }
-                for (DataComponentType<?> component : tooltip.hiddenComponents()) {
-                    var v = BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(component).getPath();
-                    sb.append("\t#hide -> ").append(v).append("\n");
+                if (!tooltip.hiddenComponents().isEmpty()) {
+                    sb.append("\tall_flags: true\n");
                 }
+                //for (DataComponentType<?> component : tooltip.hiddenComponents()) {
+                //    var v = BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(component).getPath();
+                //    sb.append("\t#hide -> ").append(v).append("\n");
+                //}
             });
             AtomicBoolean hasMaterial = new AtomicBoolean();
             of(itemStack, DataComponents.PROFILE, profile -> {
@@ -212,10 +215,24 @@ public class MenuSaver {
             if (!hasMaterial.get()) {
                 String material = BuiltInRegistries.ITEM.getKey(item.itemStack.getItem()).getPath();
                 sb.append("\tmaterial: ").append(material).append("\n");
+
+                of(itemStack, DataComponents.ITEM_MODEL, model -> {
+                    if (!model.getPath().equals(material)){
+                        sb.append("\s\s\s#model: ").append(model).append("\n");
+                    }
+                });
             }
+
         }
         sb.append("\n");
-        return sb.toString();
+        return sb.toString().replace("\t", "\s\s\s\s");
+    }
+
+    public static String sanitizeFilenameKeepSlash(String input) {
+        return input.replaceAll(
+                "[\\\\:*?\"<>|\\x00-\\x1F]",
+                ""
+        );
     }
 
     private static <T> void toList(String space, Iterable<T> t, StringBuilder sb, Function<T, Object> serializer) {
@@ -258,17 +275,32 @@ public class MenuSaver {
         }
     }
 
-    private static String toHexEscaped(int rgb) {
-        return "\"" + toHex(rgb) + "\"";
+    private static String toHexRGBEscaped(int rgb) {
+        return "\"" + toHexRGB(rgb) + "\"";
     }
 
-    private static String toHex(int rgb) {
+    private static String toHexRGB(int rgb) {
         int BIT_MASK = 0xff;
         return String.format(
                 "#%02X%02X%02X",
                 rgb >> 16 & BIT_MASK,
                 rgb >> 8 & BIT_MASK,
                 rgb >> 0 & BIT_MASK
+        );
+    }
+
+    private static String toHexARGBEscaped(int argb) {
+        return "\"" + toHexARGB(argb) + "\"";
+    }
+
+    private static String toHexARGB(int argb) {
+        int BIT_MASK = 0xff;
+        return String.format(
+                "#%02X%02X%02X%02X",
+                argb >>> 24 & BIT_MASK, // A
+                argb >>> 16 & BIT_MASK, // R
+                argb >>> 8 & BIT_MASK, // G
+                argb & BIT_MASK  // B
         );
     }
 

@@ -56,7 +56,6 @@ public abstract class PacketDecoderMixin {
                     packet.getXa(), packet.getYa(), packet.getZa()
             );
             NetworkEvent.VELOCITY_UPDATE.invoker().on(data);
-
         } else if (o instanceof ClientboundUpdateMobEffectPacket packet) {
             NetworkEvent.MOB_EFFECT.invoker().on(packet);
         } else if (o instanceof ClientboundSetTitleTextPacket packet) {

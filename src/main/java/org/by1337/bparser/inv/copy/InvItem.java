@@ -1,7 +1,10 @@
 package org.by1337.bparser.inv.copy;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.resources.RegistryOps;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 
@@ -14,15 +17,24 @@ public class InvItem {
     public final CompoundTag extra;
     public final ItemStack itemStack;
     public List<Integer> slots = new ArrayList<>();
+    public String data;
 
     public InvItem(ItemStack itemStack) {
         CustomData customData = itemStack.get(DataComponents.CUSTOM_DATA);
-        if (customData != null){
+        if (customData != null) {
             extra = customData.copyTag();
         } else {
             extra = null;
         }
         this.itemStack = itemStack;
+        if (!itemStack.isEmpty()) {
+            data = ItemStack.CODEC.encodeStart(
+                    RegistryOps.create(NbtOps.INSTANCE, Minecraft.getInstance().level.registryAccess()),
+                    itemStack
+            ).result().get().toString();
+        } else {
+            data = "air";
+        }
     }
 
     @Override
@@ -30,11 +42,11 @@ public class InvItem {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         InvItem item = (InvItem) o;
-        return itemStack.getComponentsPatch().entrySet().equals(item.itemStack.getComponentsPatch().entrySet());
+        return Objects.equals(data, item.data);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(itemStack.getComponentsPatch().entrySet());
+        return data.hashCode();
     }
 }

@@ -28,7 +28,6 @@ public class BParser implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-
         screenListener = new ScreenListener();
         chatListener = new ChatListener();
         soundListener = new SoundListener();
