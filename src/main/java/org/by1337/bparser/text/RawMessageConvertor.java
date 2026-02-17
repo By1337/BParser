@@ -16,9 +16,9 @@ public class RawMessageConvertor {
     }
 
     public static String convert(String rawMessage, boolean noColors) {
-        if (!rawMessage.startsWith("{")) return "";
+        if (!rawMessage.startsWith("{") && !rawMessage.startsWith("[")) return rawMessage;
         JsonParser parser = new JsonParser();
-        JsonObject tag = parser.parse(rawMessage).getAsJsonObject();
+        JsonElement tag = parser.parse(rawMessage);
         return toLegacy(tag, new StringBuilder(), noColors).toString();
     }
 
@@ -67,6 +67,8 @@ public class RawMessageConvertor {
             for (JsonElement listElement : element.getAsJsonArray()) {
                 toLegacy(listElement, sb, noColors);
             }
+        } else if (element.isJsonPrimitive()) {
+            sb.append(element.getAsString());
         }
         return sb;
     }

@@ -3,6 +3,7 @@ package org.by1337.bparser.listener;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.fabricmc.fabric.api.client.command.v1.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v1.FabricClientCommandSource;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.boss.BossBar;
 import net.minecraft.network.packet.s2c.play.BossBarS2CPacket;
 import net.minecraft.text.LiteralText;
@@ -35,7 +36,7 @@ public class BossBarListener {
         );
 
         NetworkEvent.BOSS_BAR.register(packet -> {
-            if (!Config.INSTANCE.bossBarLog || !Thread.currentThread().getName().contains("Netty Client IO"))
+            if (!Config.INSTANCE.bossBarLog || !MinecraftClient.getInstance().isOnThread())
                 return;
             if (lastBossBar == null) {
                 lastBossBar = new BossBarData();

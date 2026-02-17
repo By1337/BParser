@@ -3,6 +3,7 @@ package org.by1337.bparser.listener;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.fabricmc.fabric.api.client.command.v1.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v1.FabricClientCommandSource;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.registry.Registry;
@@ -27,7 +28,7 @@ public class CooldownListener {
         );
 
         NetworkEvent.COOLDOWN_UPDATE.register(packet -> {
-            if (!Config.INSTANCE.cooldownLog || !Thread.currentThread().getName().contains("Netty Client IO"))
+            if (!Config.INSTANCE.cooldownLog || !MinecraftClient.getInstance().isOnThread())
                 return;
             String material = Registry.ITEM.getKey(packet.getItem()).get().getValue().getPath();
             String text = "[cooldown] " + material + " " + packet.getCooldown();

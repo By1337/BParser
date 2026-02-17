@@ -29,7 +29,7 @@ public class EffectListener {
         );
 
         NetworkEvent.MOB_EFFECT.register(packet -> {
-            if (!Config.INSTANCE.effectLog || !Thread.currentThread().getName().contains("Netty Client IO")) return;
+            if (!Config.INSTANCE.effectLog || !MinecraftClient.getInstance().isOnThread()) return;
             MinecraftClient mc = MinecraftClient.getInstance();
 
             if (mc.player != null && packet.getEntityId() == mc.player.getEntityId()) {

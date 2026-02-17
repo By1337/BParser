@@ -22,8 +22,8 @@ public class ParticleListener {
     public void register() {
         ClientCommandManager.DISPATCHER.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("//particle_log")
                 .executes(ctx -> {
-                    Config.INSTANCE.particleLog = !Config.INSTANCE.cooldownLog;
-                    if (Config.INSTANCE.cooldownLog) {
+                    Config.INSTANCE.particleLog = !Config.INSTANCE.particleLog;
+                    if (Config.INSTANCE.particleLog) {
                         ctx.getSource().sendFeedback(new TranslatableText("lang.bparser.particle.on"));
                     } else {
                         ctx.getSource().sendFeedback(new TranslatableText("lang.bparser.particle.off"));
@@ -34,7 +34,7 @@ public class ParticleListener {
         );
 
         NetworkEvent.PARTICLE.register(packet -> {
-            if (!Config.INSTANCE.cooldownLog || !Thread.currentThread().getName().contains("Netty Client IO")) return;
+            if (!Config.INSTANCE.particleLog || !MinecraftClient.getInstance().isOnThread()) return;
             LiteralText text = new LiteralText("[particle]: ");
             String type = Registry.PARTICLE_TYPE.getId(packet.getParameters().getType()).toString();
 

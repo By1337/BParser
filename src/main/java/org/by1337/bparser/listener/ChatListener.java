@@ -4,6 +4,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.fabricmc.fabric.api.client.command.v1.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v1.FabricClientCommandSource;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
@@ -78,7 +79,7 @@ public class ChatListener {
         );
 
         NetworkEvent.CHAT_EVENT.register(packet -> {
-            if (!Config.INSTANCE.chat.clickToCopy || !Thread.currentThread().getName().contains("Netty Client IO"))
+            if (!Config.INSTANCE.chat.clickToCopy || !MinecraftClient.getInstance().isOnThread())
                 return;
             if (packet.getMessage() instanceof LiteralText) {
                 LiteralText literalText = (LiteralText) packet.getMessage();

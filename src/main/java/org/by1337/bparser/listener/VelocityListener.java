@@ -28,7 +28,7 @@ public class VelocityListener {
         );
 
         NetworkEvent.VELOCITY_UPDATE.register(data -> {
-            if (!Config.INSTANCE.velocityLog || !Thread.currentThread().getName().contains("Netty Client IO")) return;
+            if (!Config.INSTANCE.velocityLog || !MinecraftClient.getInstance().isOnThread()) return;
             MinecraftClient mc = MinecraftClient.getInstance();
             if (mc.player != null && data.id() == mc.player.getEntityId()) {
                 MinecraftClient.getInstance().inGameHud.addChatMessage(net.minecraft.network.MessageType.CHAT, Text.of("велосити " + data.x() + " " + data.y() + " " + data.z()), UUID.randomUUID());

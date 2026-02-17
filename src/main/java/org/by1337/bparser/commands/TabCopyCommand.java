@@ -19,7 +19,7 @@ public class TabCopyCommand {
                     MinecraftClient client = MinecraftClient.getInstance();
                     PlayerListHudAccessor tab = (PlayerListHudAccessor) client.inGameHud.getPlayerListHud();
 
-                    MutableText text = tab.getHeader().copy().append(new LiteralText("\n")).append(tab.getFooter());
+                    MutableText text = new LiteralText("").append(tab.getHeader()).append("\n").append(tab.getFooter());
                     ChatUtil.show(
                             ChatUtil.addCopyButton(
                                     text,

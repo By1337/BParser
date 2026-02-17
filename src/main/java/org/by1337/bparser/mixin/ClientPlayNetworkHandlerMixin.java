@@ -23,7 +23,7 @@ public abstract class ClientPlayNetworkHandlerMixin {
         NetworkEvent.SOUND_EVENT.invoker().on(new SoundEvent(
                 packet.getSound(),
                 packet.getVolume(),
-                packet.getVolume()
+                packet.getPitch()
         ));
     }
 

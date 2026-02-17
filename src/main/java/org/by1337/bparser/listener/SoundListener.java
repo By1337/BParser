@@ -36,7 +36,7 @@ public class SoundListener {
         NetworkEvent.SOUND_EVENT.register(new SoundEventListener() {
             @Override
             public void on(SoundEvent event) {
-                if (!Config.INSTANCE.soundLog || !Thread.currentThread().getName().contains("Netty Client IO")) return;
+                if (!Config.INSTANCE.soundLog || !MinecraftClient.getInstance().isOnThread()) return;
                 LiteralText text = new LiteralText("[sound] ");
                 String sound = event.getSound().getId().getPath();
                 text.append(new LiteralText(sound)
