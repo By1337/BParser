@@ -13,6 +13,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.Container;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.enchantment.Enchantment;
 import org.by1337.bparser.inv.ScreenUtil;
 import org.by1337.bparser.text.ComponentUtil;
@@ -154,6 +155,9 @@ public class MenuSaver {
                 sb.append("\tcolor: ").append(toHexARGBEscaped(color.getTextColor()));
             });
             of(itemStack, DataComponents.POTION_CONTENTS, content -> {
+                content.potion().ifPresent(h -> {
+                    sb.append("\tpotion: ").append(h.getRegisteredName()).append("\n");
+                });
                 var c = content.customColor();
                 if (c.isPresent()) {
                     if (hasColor.get()) sb.append("\t#potion-customColor ");
@@ -201,6 +205,38 @@ public class MenuSaver {
                 //    sb.append("\t#hide -> ").append(v).append("\n");
                 //}
             });
+            //                if (tag.contains("AttributeModifiers", NbtType.LIST)) {
+            //                    NbtList list = tag.getList("AttributeModifiers", NbtType.COMPOUND);
+            //                    if (!list.isEmpty()) {
+            //                        sb.append("    attributes:\n");
+            //                        for (NbtElement element : list) {
+            //                            NbtCompound compound = (NbtCompound) element;
+            //                            sb.append("      - name: ").append(quoteAndEscape(compound.getString("Name"))).append("\n");
+            //                            sb.append("        attribute: ").append(quoteAndEscape(compound.getString("AttributeName"))).append("\n");
+            //                            sb.append("        amount: ").append(compound.getDouble("Amount")).append("\n");
+            //                            int operation = compound.getInt("Operation");
+            //                            sb.append("        operation: ").append(
+            //                                    operation == 0 ? "add_number" : operation == 1 ? "add_scalar" : "multiply_scalar_1"
+            //                            ).append("\n");
+            //                            sb.append("        slot: ").append(quoteAndEscape(compound.getString("Slot"))).append("\n");
+            //
+            //                        }
+            //                    }
+            //                }
+            of(itemStack, DataComponents.ATTRIBUTE_MODIFIERS, attributes -> {
+                if (attributes.modifiers().isEmpty()) return;
+                sb.append("    attributes:\n");
+                for (ItemAttributeModifiers.Entry entry : attributes.modifiers()) {
+                    sb.append("      - name: ").append(quoteAndEscape(entry.modifier().id().toString())).append("\n");
+                    sb.append("        attribute: ").append(quoteAndEscape(entry.attribute().getRegisteredName())).append("\n");
+                    sb.append("        amount: ").append(entry.modifier().amount()).append("\n");
+                    int operation = entry.modifier().operation().id();
+                    sb.append("        operation: ").append(
+                            operation == 0 ? "add_number" : operation == 1 ? "add_scalar" : "multiply_scalar_1"
+                    ).append("\n");
+                    sb.append("        slot: ").append(quoteAndEscape(entry.slot().getSerializedName())).append("\n");
+                }
+            });
             AtomicBoolean hasMaterial = new AtomicBoolean();
             of(itemStack, DataComponents.PROFILE, profile -> {
                 if (profile.properties().containsKey("textures")) {
@@ -217,7 +253,7 @@ public class MenuSaver {
                 sb.append("\tmaterial: ").append(material).append("\n");
 
                 of(itemStack, DataComponents.ITEM_MODEL, model -> {
-                    if (!model.getPath().equals(material)){
+                    if (!model.getPath().equals(material)) {
                         sb.append("\s\s\s#model: ").append(model).append("\n");
                     }
                 });
