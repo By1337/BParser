@@ -3,11 +3,13 @@ package org.by1337.bparser.inv.copy;
 import com.google.common.base.Joiner;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
+import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
 import net.minecraft.text.Text;
 import net.minecraft.util.Util;
 import org.by1337.bparser.inv.ScreenUtil;
@@ -140,6 +142,29 @@ public class MenuSaver {
                             rgb >> 0 & BIT_MASK
                     )).append("'\n");
                 }
+                if (tag.contains("Potion", NbtType.STRING)) {
+                    sb.append("    potion: ").append(tag.getString("Potion")).append("\n");
+                }
+
+                if (tag.contains("custom_potion_effects", NbtType.LIST)) {
+                    NbtList list = tag.getList("custom_potion_effects", NbtType.COMPOUND);
+                    if (!list.isEmpty()) {
+                        sb.append("    potion_contents:\n");
+                        for (NbtElement element : list) {
+                            NbtCompound compound = (NbtCompound) element;
+                            String effect = compound.getString("id");
+                            if (effect.startsWith("minecraft:")){
+                                effect = effect.substring("minecraft:".length());
+                            }
+                            int duration = compound.getInt("duration");
+                            int amplifier = compound.getInt("amplifier");
+                            sb.append("      ").append(effect).append(": ").append(duration).append(" ").append(amplifier)
+                                    .append("\n")
+                            ;
+
+                        }
+                    }
+                }
                 if (tag.contains("Enchantments")) {
                     NbtList enchantments = tag.getList("Enchantments", NbtType.COMPOUND);
                     sb.append("    enchantments:\n");
@@ -180,6 +205,24 @@ public class MenuSaver {
                                 sb.append("    ").append("material: ").append(quoteAndEscape("basehead-" + val.getString("Value"))).append("\n");
                                 isBaseHead = true;
                             }
+                        }
+                    }
+                }
+                if (tag.contains("AttributeModifiers", NbtType.LIST)) {
+                    NbtList list = tag.getList("AttributeModifiers", NbtType.COMPOUND);
+                    if (!list.isEmpty()) {
+                        sb.append("    attributes:\n");
+                        for (NbtElement element : list) {
+                            NbtCompound compound = (NbtCompound) element;
+                            sb.append("      - name: ").append(quoteAndEscape(compound.getString("Name"))).append("\n");
+                            sb.append("        attribute: ").append(quoteAndEscape(compound.getString("AttributeName"))).append("\n");
+                            sb.append("        amount: ").append(compound.getDouble("Amount")).append("\n");
+                            int operation = compound.getInt("Operation");
+                            sb.append("        operation: ").append(
+                                    operation == 0 ? "add_number" : operation == 1 ? "add_scalar" : "multiply_scalar_1"
+                            ).append("\n");
+                            sb.append("        slot: ").append(quoteAndEscape(compound.getString("Slot"))).append("\n");
+
                         }
                     }
                 }

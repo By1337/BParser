@@ -32,7 +32,7 @@ public class NetworkState$PacketHandlerMixin {
             NetworkEvent.SOUND_EVENT.invoker().on(new SoundEvent(
                     packet.getSound(),
                     packet.getVolume(),
-                    packet.getVolume()
+                    packet.getPitch()
             ));
         } else if (o instanceof ParticleS2CPacket packet) {
             NetworkEvent.PARTICLE.invoker().on(packet);

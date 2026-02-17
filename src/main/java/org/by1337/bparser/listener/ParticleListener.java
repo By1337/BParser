@@ -24,7 +24,7 @@ import java.util.UUID;
 public class ParticleListener {
     public ParticleListener() {
         NetworkEvent.PARTICLE.register(packet -> {
-            if (!Config.INSTANCE.cooldownLog ) return;
+            if (!Config.INSTANCE.particleLog ) return;
             MutableText text = Text.literal("[particle]: ");
             String type = Registries.PARTICLE_TYPE.getId(packet.getParameters().getType()).toString();
 
@@ -62,8 +62,8 @@ public class ParticleListener {
     public void register(CommandDispatcher<FabricClientCommandSource> dispatcher) {
         dispatcher.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("//particle_log")
                 .executes(ctx -> {
-                    Config.INSTANCE.particleLog = !Config.INSTANCE.cooldownLog;
-                    if (Config.INSTANCE.cooldownLog) {
+                    Config.INSTANCE.particleLog = !Config.INSTANCE.particleLog;
+                    if (Config.INSTANCE.particleLog) {
                         ctx.getSource().sendFeedback(Text.translatable("lang.bparser.particle.on"));
                     } else {
                         ctx.getSource().sendFeedback(Text.translatable("lang.bparser.particle.off"));
