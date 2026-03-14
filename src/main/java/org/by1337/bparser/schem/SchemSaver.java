@@ -7,12 +7,9 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.io.ByteArrayOutputStream;
@@ -56,24 +53,23 @@ public class SchemSaver {
 
         CompoundTag compound = new CompoundTag();
         compound.putInt("DataVersion", SharedConstants.getCurrentVersion().dataVersion().version());
-        compound.putInt("Version", 2);
+        compound.putInt("Version", 3);
 
-        compound.putIntArray("Offset", new int[]{min.getX(), min.getY(), min.getZ()});
+        compound.putIntArray("Offset", new int[]{offset.getX(), offset.getY(), offset.getZ()});
 
         compound.putShort("Width", (short) width);
         compound.putShort("Height", (short) height);
         compound.putShort("Length", (short) length);
 
-
-        CompoundTag metadata = new CompoundTag();
-        metadata.putString("CreatedByMod", "BParser");
-        metadata.putString("ModAuthor", "By1337");
-        metadata.putString("Name", name);
-        metadata.putInt("WEOffsetX", offset.getX());
-        metadata.putInt("WEOffsetY", offset.getY());
-        metadata.putInt("WEOffsetZ", offset.getZ());
-
-        compound.put("Metadata", metadata);
+        compound.put("Metadata", warp(
+                "CreatedByMod", StringTag.valueOf("BParser"),
+                "ModAuthor", StringTag.valueOf("By1337"),
+                "Name", StringTag.valueOf(name),
+                "WorldEdit", warp(
+                        "Origin", new IntArrayTag(new int[]{origin.getX(), origin.getY(), origin.getZ()})
+                ),
+                "Date", LongTag.valueOf(System.currentTimeMillis())
+        ));
 
 
         ListTag tileEntities = new ListTag();
@@ -100,10 +96,12 @@ public class SchemSaver {
                         data.remove("y");
                         data.remove("z");
 
+                        CompoundTag result = new CompoundTag();
                         ResourceLocation identifier = BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(blockEntity.getType());
-                        data.putString("Id", identifier.toString());
-                        data.putIntArray("Pos", new int[]{x, y, z});
-                        tileEntities.add(data);
+                        result.putString("Id", identifier.toString());
+                        result.putIntArray("Pos", new int[]{x, y, z});
+                        result.put("Data", data);
+                        tileEntities.add(result);
                     }
 
                     String blockKey = state.toString().replace("Block{", "").replace("}", "");
@@ -124,18 +122,78 @@ public class SchemSaver {
                 }
             }
         }
-        compound.putInt("PaletteMax", paletteMax);
         CompoundTag paletteTag = new CompoundTag();
         palette.forEach(paletteTag::putInt);
-        compound.put("Palette", paletteTag);
-        compound.putByteArray("BlockData", buffer.toByteArray());
-        compound.put("BlockEntities", tileEntities);
+
+        compound.put("Blocks", warp(
+                "Palette", paletteTag,
+                "Data", new ByteArrayTag(buffer.toByteArray()),
+                "BlockEntities", tileEntities
+        ));
 
         try {
             schemFolder.toFile().mkdirs();
-            NbtIo.writeCompressed(compound, new File(schemFolder.toFile(), name).toPath());
+            NbtIo.writeCompressed(warp("Schematic", compound), new File(schemFolder.toFile(), name).toPath());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static CompoundTag warp(String key, Tag tag) {
+        CompoundTag c = new CompoundTag();
+        c.put(key, tag);
+        return c;
+    }
+
+    private static CompoundTag warp(
+            String k, Tag t,
+            String k1, Tag t1
+    ) {
+        CompoundTag c = new CompoundTag();
+        c.put(k, t);
+        c.put(k1, t1);
+        return c;
+    }
+
+    private static CompoundTag warp(
+            String k, Tag t,
+            String k1, Tag t1,
+            String k2, Tag t2
+    ) {
+        CompoundTag c = new CompoundTag();
+        c.put(k, t);
+        c.put(k1, t1);
+        c.put(k2, t2);
+        return c;
+    }
+
+    private static CompoundTag warp(
+            String k, Tag t,
+            String k1, Tag t1,
+            String k2, Tag t2,
+            String k3, Tag t3
+    ) {
+        CompoundTag c = new CompoundTag();
+        c.put(k, t);
+        c.put(k1, t1);
+        c.put(k2, t2);
+        c.put(k3, t3);
+        return c;
+    }
+
+    private static CompoundTag warp(
+            String k, Tag t,
+            String k1, Tag t1,
+            String k2, Tag t2,
+            String k3, Tag t3,
+            String k4, Tag t4
+    ) {
+        CompoundTag c = new CompoundTag();
+        c.put(k, t);
+        c.put(k1, t1);
+        c.put(k2, t2);
+        c.put(k3, t3);
+        c.put(k4, t4);
+        return c;
     }
 }

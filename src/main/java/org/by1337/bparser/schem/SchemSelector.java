@@ -1,5 +1,6 @@
 package org.by1337.bparser.schem;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -185,20 +186,22 @@ public class SchemSelector {
             double maxZ = region.maxZ + 1;
 
 
+
             {
                 AABB box = new AABB(minX, minY, minZ, maxX, maxY, maxZ);
                 AABB shiftedBox = box.move(-cameraPos.x, -cameraPos.y, -cameraPos.z);
+                RenderUtil.setCurrent(RenderUtil.LINES_NO_DEPTH_TEST);
                 RenderUtil.drawBox(context, shiftedBox, 1f, 0, 0, 1, 3.f);
             }
             {
                 AABB box = new AABB(pos1.getX() + 0.3, pos1.getY() + 0.3, pos1.getZ() + 0.3, pos1.getX() + 0.7, pos1.getY() + 0.7, pos1.getZ() + 0.7);
                 AABB shiftedBox = box.move(-cameraPos.x, -cameraPos.y, -cameraPos.z);
-                RenderUtil.drawBox(context, shiftedBox, 0f, 1, 0, 1);
+                RenderUtil.drawBox(context, shiftedBox, 0f, 1, 0, 1, 2f);
             }
             {
                 AABB box = new AABB(pos2.getX() + 0.3, pos2.getY() + 0.3, pos2.getZ() + 0.3, pos2.getX() + 0.7, pos2.getY() + 0.7, pos2.getZ() + 0.7);
                 AABB shiftedBox = box.move(-cameraPos.x, -cameraPos.y, -cameraPos.z);
-                RenderUtil.drawBox(context, shiftedBox, 0f, 1, 0, 1);
+                RenderUtil.drawBox(context, shiftedBox, 0f, 1, 0, 1, 2f);
             }
         }
     }
