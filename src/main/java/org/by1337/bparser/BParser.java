@@ -25,6 +25,7 @@ public class BParser implements ClientModInitializer {
     private EffectListener effectListener;
     private TitleListener titleListener;
     private BossBarListener bossBarListener;
+    private ParticleRecorder particleRecorder;
 
     @Override
     public void onInitializeClient() {
@@ -38,6 +39,7 @@ public class BParser implements ClientModInitializer {
         effectListener = new EffectListener();
         titleListener = new TitleListener();
         bossBarListener = new BossBarListener();
+        particleRecorder = new ParticleRecorder();
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> {
             screenListener.register(dispatcher);
@@ -50,6 +52,7 @@ public class BParser implements ClientModInitializer {
             effectListener.register(dispatcher);
             titleListener.register(dispatcher);
             bossBarListener.register(dispatcher);
+            particleRecorder.register(dispatcher);
             ScoreboardCopyCommand.register(dispatcher);
             TabCopyCommand.register(dispatcher);
         });

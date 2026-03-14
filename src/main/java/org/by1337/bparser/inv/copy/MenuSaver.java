@@ -126,6 +126,7 @@ public class MenuSaver {
                 sb.append("\tname: ").append(quoteAndEscape(ComponentUtil.convert(c))).append("\n");
             });
             of(itemStack, DataComponents.LORE, lore -> {
+                if (lore.lines().isEmpty()) return;
                 sb.append("\tlore:");
                 toList("\t  ", lore.lines(), sb, c -> quoteAndEscape(ComponentUtil.convert(c)));
             });
@@ -144,15 +145,15 @@ public class MenuSaver {
             AtomicBoolean hasColor = new AtomicBoolean();
             of(itemStack, DataComponents.DYED_COLOR, color -> {
                 hasColor.set(true);
-                sb.append("\tcolor: ").append(toHexRGBEscaped(color.rgb()));
+                sb.append("\tcolor: ").append(toHexRGBEscaped(color.rgb())).append("\n");
             });
             of(itemStack, DataComponents.MAP_COLOR, color -> {
                 if (hasColor.get()) sb.append("\t#map_color -");
-                sb.append("\tcolor: ").append(toHexRGBEscaped(color.rgb()));
+                sb.append("\tcolor: ").append(toHexRGBEscaped(color.rgb())).append("\n");
             });
             of(itemStack, DataComponents.BASE_COLOR, color -> {
                 if (hasColor.get()) sb.append("\t#base_color ");
-                sb.append("\tcolor: ").append(toHexARGBEscaped(color.getTextColor()));
+                sb.append("\tcolor: ").append(toHexARGBEscaped(color.getTextColor())).append("\n");
             });
             of(itemStack, DataComponents.POTION_CONTENTS, content -> {
                 content.potion().ifPresent(h -> {
@@ -161,7 +162,7 @@ public class MenuSaver {
                 var c = content.customColor();
                 if (c.isPresent()) {
                     if (hasColor.get()) sb.append("\t#potion-customColor ");
-                    sb.append("\tcolor: ").append(toHexARGBEscaped(c.get()));
+                    sb.append("\tcolor: ").append(toHexARGBEscaped(c.get())).append("\n");
                 }
                 //potion_contents:
                 //  glowing: 10 10
@@ -205,24 +206,6 @@ public class MenuSaver {
                 //    sb.append("\t#hide -> ").append(v).append("\n");
                 //}
             });
-            //                if (tag.contains("AttributeModifiers", NbtType.LIST)) {
-            //                    NbtList list = tag.getList("AttributeModifiers", NbtType.COMPOUND);
-            //                    if (!list.isEmpty()) {
-            //                        sb.append("    attributes:\n");
-            //                        for (NbtElement element : list) {
-            //                            NbtCompound compound = (NbtCompound) element;
-            //                            sb.append("      - name: ").append(quoteAndEscape(compound.getString("Name"))).append("\n");
-            //                            sb.append("        attribute: ").append(quoteAndEscape(compound.getString("AttributeName"))).append("\n");
-            //                            sb.append("        amount: ").append(compound.getDouble("Amount")).append("\n");
-            //                            int operation = compound.getInt("Operation");
-            //                            sb.append("        operation: ").append(
-            //                                    operation == 0 ? "add_number" : operation == 1 ? "add_scalar" : "multiply_scalar_1"
-            //                            ).append("\n");
-            //                            sb.append("        slot: ").append(quoteAndEscape(compound.getString("Slot"))).append("\n");
-            //
-            //                        }
-            //                    }
-            //                }
             of(itemStack, DataComponents.ATTRIBUTE_MODIFIERS, attributes -> {
                 if (attributes.modifiers().isEmpty()) return;
                 sb.append("    attributes:\n");
