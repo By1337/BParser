@@ -26,6 +26,7 @@ public class BParser implements ClientModInitializer {
         new EffectListener().register();
         new TitleListener().register();
         new BossBarListener().register();
+        new ParticleRecorder().register();
         ScoreboardCopyCommand.register();
         TabCopyCommand.register();
     }
