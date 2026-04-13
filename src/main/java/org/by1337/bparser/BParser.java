@@ -10,7 +10,6 @@ import org.by1337.bparser.listener.*;
 import org.by1337.bparser.schem.SchemSelector;
 
 public class BParser implements ClientModInitializer {
-
     public static final String MOD_ID = "bparser";
 
     public static final Logger LOGGER = LogManager.getLogger(MOD_ID);

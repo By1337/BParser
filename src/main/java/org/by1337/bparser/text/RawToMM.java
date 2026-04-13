@@ -3,7 +3,7 @@ package org.by1337.bparser.text;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import net.minecraft.network.chat.Component;
 import org.by1337.bparser.cfg.Config;
 import org.jetbrains.annotations.Nullable;
@@ -35,19 +35,35 @@ public class RawToMM {
             int index = out.length();
             decorator.accept(raw);
 
-            if (raw.has("clickEvent")) {
-                JsonObject clickEvent = raw.getAsJsonObject("clickEvent");
+
+            String click = raw.has("clickEvent") ? "clickEvent" : raw.has("click_event") ? "click_event" : null;
+            if (click != null) {
+                JsonObject clickEvent = raw.getAsJsonObject(click);
                 String action = clickEvent.get("action").getAsString();
-                String value = clickEvent.get("value").getAsString();
+                String value;
+                if (clickEvent.has("value")) {
+                    value = clickEvent.get("value").getAsString();
+                } else if (clickEvent.has("command")) {
+                    value = clickEvent.get("command").getAsString();
+                } else {
+                    value = clickEvent.toString();
+                }
                 out.append("<click:").append(action).append(":'").append(value).append("'>");
             }
-
-            if (raw.has("hoverEvent")) {
-                JsonObject hoverEvent = raw.getAsJsonObject("hoverEvent");
+            String hover = raw.has("hoverEvent") ? "hoverEvent" : raw.has("hover_event") ? "hover_event" : null;
+            if (hover != null) {
+                JsonObject hoverEvent = raw.getAsJsonObject(hover);
                 String action = hoverEvent.get("action").getAsString();
                 out.append("<hover:").append(action).append(":'");
 
-                JsonElement contents = hoverEvent.get("contents");
+                JsonElement contents;
+                if (hoverEvent.has("contents")) {
+                    contents = hoverEvent.get("contents");
+                } else if (hoverEvent.has("value")) {
+                    contents = hoverEvent.get("value");
+                } else {
+                    contents = new JsonPrimitive("");
+                }
                 if (contents.isJsonObject()) {
                     toMM(contents.getAsJsonObject(), out, new TextDecorator(out));
                 } else {
@@ -56,22 +72,22 @@ public class RawToMM {
                 out.append("'>");
             }
 
-            if (text.isEmpty() && !raw.has("hoverEvent") && !raw.has("clickEvent") && !raw.has("extra")) {
+            if (text.isEmpty() && hover == null && click == null && !raw.has("extra")) {
                 out.setLength(index);
                 return;
             }
-            out.append(text.replace("\n", "<br>"));
+            out.append(text);
             Decoration stackColor = decorator.currentColor.get();
             if (stackColor != null && stackColor.asString().contains("gradient")) {
                 out.append("</gradient>");
                 decorator.currentColor.set(null);
             }
 
-            if (raw.has("hoverEvent")) {
+            if (hover != null) {
                 out.append("</hover>");
                 decorator.clearStack();
             }
-            if (raw.has("clickEvent")) {
+            if (click != null) {
                 out.append("</click>");
                 decorator.clearStack();
             }
@@ -81,7 +97,7 @@ public class RawToMM {
                 toMM(extra, out, decorator.overlap());
             }
         } else if (json.isJsonPrimitive()) {
-            out.append(json.getAsString().replace("\n", "<br>"));
+            out.append(json.getAsString());
         } else if (json.isJsonArray()) {
             JsonArray array = json.getAsJsonArray();
             JsonArray extra;
