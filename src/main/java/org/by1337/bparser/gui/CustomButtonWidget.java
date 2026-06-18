@@ -1,28 +1,42 @@
 package org.by1337.bparser.gui;
 
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.input.InputWithModifiers;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 
-public class CustomButtonWidget extends AbstractButton {
+import java.util.function.Supplier;
+
+public class CustomButtonWidget extends Button {
 
     private final Runnable runnable;
 
     public CustomButtonWidget(int x, int y, int width, int height, Component component, Runnable runnable) {
-        super(x, y, width, height, component);
+       // super(x, y, width, height, component);
+        super(x, y, width, height, component, new OnPress() {
+            @Override
+            public void onPress(Button button) {
+                runnable.run();
+            }
+        }, new CreateNarration() {
+            @Override
+            public MutableComponent createNarrationMessage(Supplier<MutableComponent> supplier) {
+                return supplier.get();
+            }
+        });
         this.runnable = runnable;
     }
 
-
     @Override
-    public void onPress() {
-        runnable.run();
+    protected void renderContents(GuiGraphics guiGraphics, int i, int j, float f) {
+        this.renderDefaultSprite(guiGraphics);
+        this.renderDefaultLabel(guiGraphics.textRendererForWidget(this, GuiGraphics.HoveredTextEffects.NONE));
     }
 
-    @Override
-    protected void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {
 
-    }
 
 /*
   //  @Override

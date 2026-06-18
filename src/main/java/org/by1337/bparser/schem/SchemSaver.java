@@ -8,7 +8,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.*;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -97,7 +96,7 @@ public class SchemSaver {
                         data.remove("z");
 
                         CompoundTag result = new CompoundTag();
-                        ResourceLocation identifier = BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(blockEntity.getType());
+                        var identifier = BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(blockEntity.getType());
                         result.putString("Id", identifier.toString());
                         result.putIntArray("Pos", new int[]{x, y, z});
                         result.put("Data", data);

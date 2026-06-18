@@ -1,8 +1,8 @@
 package org.by1337.bparser.inv.copy;
 
 import com.google.common.base.Joiner;
+import com.mojang.serialization.JsonOps;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import net.minecraft.Util;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponentType;
@@ -10,6 +10,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Util;
 import net.minecraft.world.Container;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.ItemStack;
@@ -101,6 +102,7 @@ public class MenuSaver {
                 continue;
             }
             sb.append("  ").append(id).append(":\n");
+           // sb.append("\t#").append(ItemStack.CODEC.encodeStart(JsonOps.INSTANCE, item.itemStack)).append('\n');
             //sb.append("\s\s\s#").append(item.data).append("\n");
             if (setSlots && !item.slots.isEmpty()) {
                 if (item.slots.size() == 1) {
@@ -193,7 +195,7 @@ public class MenuSaver {
                 for (Object2IntMap.Entry<Holder<Enchantment>> entry : enchantments.entrySet()) {
                     var key = entry.getKey().unwrapKey();
                     if (key.isPresent()) {
-                        sb.append("\t  ").append(key.get().location().getPath()).append(": ").append(entry.getIntValue()).append("\n");
+                        sb.append("\t  ").append(key.get().identifier().getPath()).append(": ").append(entry.getIntValue()).append("\n");
                         size++;
                     }
                 }
@@ -229,8 +231,8 @@ public class MenuSaver {
             });
             AtomicBoolean hasMaterial = new AtomicBoolean();
             of(itemStack, DataComponents.PROFILE, profile -> {
-                if (profile.properties().containsKey("textures")) {
-                    var data = profile.properties().get("textures").iterator().next();
+                if (profile.partialProfile().properties().containsKey("textures")) {
+                    var data = profile.partialProfile().properties().get("textures").iterator().next();
                     sb.append("\tmaterial: ").append(quoteAndEscape("basehead-" + data.value())).append("\n");
                     hasMaterial.set(true);
                 }

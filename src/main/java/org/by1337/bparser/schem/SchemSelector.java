@@ -1,14 +1,13 @@
 package org.by1337.bparser.schem;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.client.Minecraft;
@@ -18,7 +17,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import org.by1337.bparser.render.RenderUtil;
+import org.by1337.bparser.render.CustomRenderPipeline;
 
 public class SchemSelector {
     private static final int MAX_SIZE = 16 * 40;
@@ -41,7 +40,7 @@ public class SchemSelector {
             if (pos1 == null) pos1 = pos;
             return InteractionResult.PASS;
         });
-        WorldRenderEvents.LAST.register(this::onRenderWorld);
+        WorldRenderEvents.BEFORE_TRANSLUCENT.register(this::onRenderWorld);
     }
 
     public void register(CommandDispatcher<FabricClientCommandSource> dispatcher) {
@@ -175,7 +174,6 @@ public class SchemSelector {
     private void onRenderWorld(WorldRenderContext context) {
         if (!enabled) return;
         if (pos1 != null && pos2 != null) {
-            Vec3 cameraPos = context.camera().getPosition();
             Region region = new Region(pos1, pos2);
 
             double minX = region.minX;
@@ -185,24 +183,24 @@ public class SchemSelector {
             double maxY = region.maxY + 1;
             double maxZ = region.maxZ + 1;
 
-
-
+            var renderPipeline = CustomRenderPipeline.getInstance();
             {
                 AABB box = new AABB(minX, minY, minZ, maxX, maxY, maxZ);
-                AABB shiftedBox = box.move(-cameraPos.x, -cameraPos.y, -cameraPos.z);
-                RenderUtil.setCurrent(RenderUtil.LINES_NO_DEPTH_TEST);
-                RenderUtil.drawBox(context, shiftedBox, 1f, 0, 0, 1, 3.f);
+                renderPipeline.renderWaypoint(context, box, 1f, 0, 0, 0.5f);
+                //RenderUtil.drawBox(context, box, 1f, 0, 0, 1);
+
             }
             {
                 AABB box = new AABB(pos1.getX() + 0.3, pos1.getY() + 0.3, pos1.getZ() + 0.3, pos1.getX() + 0.7, pos1.getY() + 0.7, pos1.getZ() + 0.7);
-                AABB shiftedBox = box.move(-cameraPos.x, -cameraPos.y, -cameraPos.z);
-                RenderUtil.drawBox(context, shiftedBox, 0f, 1, 0, 1, 2f);
+                renderPipeline.renderWaypoint(context, box, 0f, 1, 0, 0.5f);
+                //RenderUtil.drawBox(context, box, 0f, 1, 0, 1);
             }
             {
                 AABB box = new AABB(pos2.getX() + 0.3, pos2.getY() + 0.3, pos2.getZ() + 0.3, pos2.getX() + 0.7, pos2.getY() + 0.7, pos2.getZ() + 0.7);
-                AABB shiftedBox = box.move(-cameraPos.x, -cameraPos.y, -cameraPos.z);
-                RenderUtil.drawBox(context, shiftedBox, 0f, 1, 0, 1, 2f);
+                renderPipeline.renderWaypoint(context, box, 0f, 1, 0, 0.5f);
+                //RenderUtil.drawBox(context, box, 0f, 1, 0, 1);
             }
+            renderPipeline.flush();
         }
     }
 

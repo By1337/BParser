@@ -51,9 +51,10 @@ public abstract class PacketDecoderMixin {
         } else if (o instanceof ClientboundCooldownPacket packet) {
             NetworkEvent.COOLDOWN_UPDATE.invoker().on(packet);
         } else if (o instanceof ClientboundSetEntityMotionPacket packet) {
+            var v = packet.getMovement();
             VelocityUpdate.Data data = new VelocityUpdate.Data(
                     packet.getId(),
-                    packet.getXa(), packet.getYa(), packet.getZa()
+                    v.x, v.y, v.z
             );
             NetworkEvent.VELOCITY_UPDATE.invoker().on(data);
         } else if (o instanceof ClientboundUpdateMobEffectPacket packet) {
