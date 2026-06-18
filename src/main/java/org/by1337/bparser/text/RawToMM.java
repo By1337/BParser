@@ -3,7 +3,6 @@ package org.by1337.bparser.text;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 import net.minecraft.network.chat.Component;
 import org.by1337.bparser.cfg.Config;
 import org.jetbrains.annotations.Nullable;
@@ -35,44 +34,33 @@ public class RawToMM {
             int index = out.length();
             decorator.accept(raw);
 
-
-            String click = raw.has("clickEvent") ? "clickEvent" : raw.has("click_event") ? "click_event" : null;
-            if (click != null) {
-                JsonObject clickEvent = raw.getAsJsonObject(click);
+            var click0 = getAny(raw, "clickEvent", "click_event");
+            if (click0 != null) {
+                JsonObject clickEvent = click0.getAsJsonObject();
                 String action = clickEvent.get("action").getAsString();
-                String value;
-                if (clickEvent.has("value")) {
-                    value = clickEvent.get("value").getAsString();
-                } else if (clickEvent.has("command")) {
-                    value = clickEvent.get("command").getAsString();
-                } else {
-                    value = clickEvent.toString();
-                }
+                // see net.minecraft.network.chat.ClickEvent
+                var value0 = getAny(clickEvent, "page", "value", "id", "path", "url", "command", "dialog");
+                String value = value0 != null ? value0.getAsString() : clickEvent.toString();
                 out.append("<click:").append(action).append(":'").append(value).append("'>");
             }
-            String hover = raw.has("hoverEvent") ? "hoverEvent" : raw.has("hover_event") ? "hover_event" : null;
-            if (hover != null) {
-                JsonObject hoverEvent = raw.getAsJsonObject(hover);
+            var hover0 = getAny(raw, "hoverEvent", "hover_event");
+            if (hover0 != null) {
+                JsonObject hoverEvent = hover0.getAsJsonObject();
                 String action = hoverEvent.get("action").getAsString();
                 out.append("<hover:").append(action).append(":'");
 
-                JsonElement contents;
-                if (hoverEvent.has("contents")) {
-                    contents = hoverEvent.get("contents");
-                } else if (hoverEvent.has("value")) {
-                    contents = hoverEvent.get("value");
-                } else {
-                    contents = new JsonPrimitive("");
-                }
-                if (contents.isJsonObject()) {
-                    toMM(contents.getAsJsonObject(), out, new TextDecorator(out));
-                } else {
-                    out.append(contents.getAsString());
+                JsonElement contents = getAny(hoverEvent, "value", "contents");
+                if (contents != null) {
+                    if (contents.isJsonObject()) {
+                        toMM(contents.getAsJsonObject(), out, new TextDecorator(out));
+                    } else {
+                        out.append(contents.getAsString());
+                    }
                 }
                 out.append("'>");
             }
 
-            if (text.isEmpty() && hover == null && click == null && !raw.has("extra")) {
+            if (text.isEmpty() && click0 == null && hover0 == null && !raw.has("extra")) {
                 out.setLength(index);
                 return;
             }
@@ -83,11 +71,11 @@ public class RawToMM {
                 decorator.currentColor.set(null);
             }
 
-            if (hover != null) {
+            if (hover0 != null) {
                 out.append("</hover>");
                 decorator.clearStack();
             }
-            if (click != null) {
+            if (click0 != null) {
                 out.append("</click>");
                 decorator.clearStack();
             }
@@ -117,6 +105,13 @@ public class RawToMM {
             }
         }
 
+    }
+
+    private static @Nullable JsonElement getAny(JsonObject o, String... keys) {
+        for (String key : keys) {
+            if (o.has(key)) return o.get(key);
+        }
+        return null;
     }
 
     private static String colorNameToHex(String name) {

@@ -132,6 +132,13 @@ public class MenuSaver {
             });
 
             of(itemStack, DataComponents.CUSTOM_MODEL_DATA, model -> {
+                boolean fcsEmpty = model.flags().isEmpty() && model.colors().isEmpty() && model.strings().isEmpty();
+                boolean floatsEmpty = model.floats().isEmpty();
+                if (fcsEmpty && floatsEmpty) return;
+                if (fcsEmpty && model.floats().size() == 1){
+                    sb.append("\tmodel_data: ").append(model.floats().getFirst()).append('\n');
+                    return;
+                }
                 sb.append("\tmodel_data:\n");
                 sb.append("\t  floats:");
                 toList("\t\t", model.floats(), sb, b -> b);
@@ -504,7 +511,7 @@ public class MenuSaver {
                     if (position <= 0) break;
                 }
                 currentPosition++;
-                return combination.toString();
+                return "_" + combination + "_";
             }
         }
 

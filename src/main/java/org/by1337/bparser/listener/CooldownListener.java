@@ -16,11 +16,8 @@ public class CooldownListener {
             if (!Config.INSTANCE.cooldownLog )
                 return;
             String material = packet.cooldownGroup().getPath();
-            String text = "[cooldown] " + material + " " + packet.duration();
-
-            MutableComponent msg = Component.literal(text);
-            ChatUtil.addCopyButton(msg, material + ": " +  packet.duration());
-            ChatUtil.show(msg);
+            String out = "cooldown: %s %d".formatted(material, packet.duration());
+            ChatUtil.showCopiable(out);
         });
     }
 

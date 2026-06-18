@@ -33,6 +33,9 @@ public class ChatUtil {
                 .withColor(color);
     }
 
+    public static void showCopiable(String msg) {
+        show(addCopyButton(Component.literal(msg), msg));
+    }
     public static void show(Component text) {
         Minecraft.getInstance().gui.getChat().addMessage(text);
     }

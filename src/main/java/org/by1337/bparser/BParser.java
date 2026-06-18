@@ -1,13 +1,24 @@
 package org.by1337.bparser;
 
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.by1337.bparser.commands.ScoreboardCopyCommand;
 import org.by1337.bparser.commands.TabCopyCommand;
 import org.by1337.bparser.listener.*;
+import org.by1337.bparser.render.RenderUtil;
 import org.by1337.bparser.schem.SchemSelector;
+import org.by1337.bparser.util.ChatUtil;
 
 public class BParser implements ClientModInitializer {
     public static final String MOD_ID = "bparser";
@@ -54,7 +65,19 @@ public class BParser implements ClientModInitializer {
             particleRecorder.register(dispatcher);
             ScoreboardCopyCommand.register(dispatcher);
             TabCopyCommand.register(dispatcher);
-        });
 
+            dispatcher.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("//distance")
+                    .executes(ctx -> {
+                        LocalPlayer localPlayer = Minecraft.getInstance().player;
+                        for (AbstractClientPlayer player : Minecraft.getInstance().level.players()) {
+                            if (player == localPlayer) continue;
+                            var distanceTo = localPlayer.position().distanceTo(player.position());
+                            var distanceToSqr = localPlayer.position().distanceToSqr(player.position());
+                            ChatUtil.show(Component.literal(localPlayer.getName() + " -> " + player.getName() + " = " + distanceTo + "  sqr" + distanceToSqr));
+                        }
+                        return 1;
+                    })
+            );
+        });
     }
 }
